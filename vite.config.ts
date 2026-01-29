@@ -1,3 +1,4 @@
+import path from "node:path"
 import { crx } from "@crxjs/vite-plugin"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -16,6 +17,11 @@ export default defineConfig({
 
     crx({ manifest }),
   ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
   build: {
     outDir: "dist",
   },
