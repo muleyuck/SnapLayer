@@ -12,14 +12,21 @@ const fileToDataUrl = (file: File | Blob): Promise<string> => {
 
 const sendMessage = async (dataUrl: string) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-  if (!tab.id) {
-    throw new Error("Not fount Active Tab")
+  if (!tab.id || !tab.url) {
+    throw new Error("Not found Active Tab")
   }
 
-  await chrome.tabs.sendMessage(tab.id, {
+  const message: SendMessage = {
     type: "ADD_IMAGE",
     imageData: dataUrl,
-  } as SendMessage)
+  }
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, message)
+  } catch {
+    // Content script not loaded yet - reload the tab to inject it
+    throw new Error("Please reload the page and try again")
+  }
 
   // Close popup after successful upload
   window.close()
@@ -31,16 +38,15 @@ export default function ImageUploader() {
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) {
-      return
-    }
-    setError(null)
-
     try {
+      if (!file) {
+        throw new Error("Cant't get selected image")
+      }
       const dataUrl = await fileToDataUrl(file)
-      sendMessage(dataUrl)
+      await sendMessage(dataUrl)
+      setError(null)
     } catch (err) {
-      setError("Error Occurred!")
+      setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
       console.error(err)
     } finally {
       // Reset input for re-selecting same file
@@ -52,40 +58,46 @@ export default function ImageUploader() {
 
   const handlePasteImage = useCallback(async (e: ClipboardEvent) => {
     const items = e.clipboardData?.items
-    if (!items || !items.length) {
-      return
-    }
-    const item = items[0]
-    let dataUrl: string | null = null
-    // ① Images (png, jpg, svg image)
-    if (item.type.startsWith("image/")) {
-      const file = item.getAsFile()
-      if (!file) {
-        return
+    try {
+      if (!items || !items.length) {
+        throw new Error("Cant't get pasted item from clipboard")
       }
-      dataUrl = await fileToDataUrl(file)
-    }
+      const item = items[0]
+      let pastedFile: File | Blob | null = null
 
-    // ② SVG as text
-    if (item.type === "text/plain") {
-      const text = await new Promise<string>((resolve) => {
-        item.getAsString(resolve)
-      })
-      if (text.trim().startsWith("<svg")) {
-        const blob = new Blob([text], {
+      if (item.type.startsWith("image/")) {
+        // ① Images (png, jpg, svg image)
+        const file = item.getAsFile()
+        if (!file) {
+          setError("Fail to convert pasted image to file")
+          return
+        }
+        pastedFile = file
+      } else if (item.type === "text/plain") {
+        // ② SVG as text
+        const text = await new Promise<string>((resolve) => {
+          item.getAsString(resolve)
+        })
+        const trimmed = text.trim()
+        if (!trimmed) {
+          throw new Error("Pasted item has no content")
+        }
+        if (!trimmed.startsWith("<svg")) {
+          throw new Error("Pasted item as text/plain is only supported SVG")
+        }
+
+        pastedFile = new Blob([text], {
           type: "image/svg+xml",
         })
-        dataUrl = await fileToDataUrl(blob)
       }
-    }
-    console.log(dataUrl)
-    if (!dataUrl) {
-      return
-    }
-    try {
-      sendMessage(dataUrl)
+      if (!pastedFile) {
+        throw new Error("Can't get pasted item, Only support (jpeg, png and svg)")
+      }
+      const dataUrl = await fileToDataUrl(pastedFile)
+      await sendMessage(dataUrl)
+      setError(null)
     } catch (err) {
-      setError("Error occurred!")
+      setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
       console.error(err)
     }
   }, [])
