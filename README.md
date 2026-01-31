@@ -61,4 +61,4 @@ TODO: Add screenshots/GIF demo here
 
 ## License
 
-MIT
+[The MIT Licence](https://github.com/muleyuck/SnapLayer/blob/main/LICENSE)
