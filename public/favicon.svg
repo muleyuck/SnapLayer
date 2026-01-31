@@ -1,0 +1,12 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 32C44 25.3726 49.3726 20 56 20H104C110.627 20 116 25.3726 116 32V80C116 86.6274 110.627 92 104 92H56C49.3726 92 44 86.6274 44 80V32Z" fill="#387CEB"/>
+<rect x="12" y="36" width="72" height="72" rx="12" fill="#A683F5" fill-opacity="0.75"/>
+<mask id="path-3-inside-1_76_52" fill="white">
+<path d="M42 36H84V94H54C47.3726 94 42 88.6274 42 82V36Z"/>
+</mask>
+<path d="M42 36H84H42M84 99H54C44.6112 99 37 91.3888 37 82H47C47 85.866 50.134 89 54 89H84V99ZM54 99C44.6112 99 37 91.3888 37 82V36H47V82C47 85.866 50.134 89 54 89V99ZM54 89M84 36V94V36" fill="#0061FF" fill-opacity="0.75" mask="url(#path-3-inside-1_76_52)"/>
+<mask id="path-5-inside-2_76_52" fill="white">
+<path d="M42 34H75C81.6274 34 87 39.3726 87 46V94H42V34Z"/>
+</mask>
+<path d="M42 29H75C84.3888 29 92 36.6112 92 46H82C82 42.134 78.866 39 75 39H42V29ZM42 39M87 94H42H87M87 94M42 94V34V94M75 29C84.3888 29 92 36.6112 92 46V94H82V46C82 42.134 78.866 39 75 39V29Z" fill="#5F2FCB" fill-opacity="0.75" mask="url(#path-5-inside-2_76_52)"/>
+</svg>

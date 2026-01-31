@@ -111,10 +111,10 @@ export default function ImageUploader() {
 
   return (
     <div className="space-y-1">
-      <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-gray-300 border-dashed bg-gray-50 p-8 transition-colors hover:border-blue-500 hover:bg-blue-50">
+      <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-gray-400 border-dashed bg-gray-50 p-8 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:bg-gray-700 dark:hover:border-blue-300/60 dark:hover:bg-blue-500/20">
         <h2 className="text-center text-sm">
           <p className="font-semibold">Paste or Select image</p>
-          <p className="text-gray-500">(jpeg, png and svg.)</p>
+          <p className="text-gray-500 dark:text-gray-300">(jpeg, png and svg.)</p>
         </h2>
         <input
           ref={fileInputRef}
