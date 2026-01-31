@@ -1,5 +1,10 @@
 [![unit-test](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml/badge.svg)](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/public/logo-dark.svg">
+  <img width="512" src="/public/logo-light.svg">
+</picture>
+
 # SnapLayer
 
 🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images on any webpage.  
