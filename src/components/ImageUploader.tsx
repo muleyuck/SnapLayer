@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { SendMessage } from "@/types/Message"
 
 const fileToDataUrl = (file: File | Blob): Promise<string> => {
@@ -56,7 +56,7 @@ export default function ImageUploader() {
     }
   }
 
-  const handlePasteImage = useCallback(async (e: ClipboardEvent) => {
+  const handlePasteImage = async (e: ClipboardEvent) => {
     const items = e.clipboardData?.items
     try {
       if (!items || !items.length) {
@@ -100,7 +100,7 @@ export default function ImageUploader() {
       setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
       console.error(err)
     }
-  }, [])
+  }
 
   useEffect(() => {
     document.addEventListener("paste", handlePasteImage)
