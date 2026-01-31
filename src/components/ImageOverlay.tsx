@@ -1,5 +1,5 @@
 import { cva } from "class-variance-authority"
-import { useEffect, useReducer, useState } from "react"
+import { useEffect, useMemo, useReducer, useState } from "react"
 import { ImageToolbar } from "@/components/ImageToolbar"
 import { IMAGE_OVELAY_INITIAL_STATE, imageOverlayReducer } from "@/hooks/imageOverlayReducer"
 import { RESIZE_DIRECTIONS, useDragAndResize } from "@/hooks/useDragAndResize"
@@ -46,7 +46,7 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
   const [state, dispatch] = useReducer(imageOverlayReducer, IMAGE_OVELAY_INITIAL_STATE)
   const [isHovered, setIsHovered] = useState(false)
 
-  const processedImageData = processSvgImage(imageData)
+  const processedImageData = useMemo(() => processSvgImage(imageData), [imageData])
 
   const { isDragging, isResizing, handleDragStart, handleResizeStart } = useDragAndResize({ state, dispatch })
 

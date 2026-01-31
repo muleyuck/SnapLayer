@@ -8,11 +8,7 @@ import manifest from "./manifest.json"
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react({
-      babel: {
-        plugins: [["babel-plugin-react-compiler"]],
-      },
-    }),
+    react(),
     tailwindcss(),
 
     crx({ manifest }),
