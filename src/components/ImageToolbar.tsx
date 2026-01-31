@@ -98,7 +98,7 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
         >
           {state.lockAspectRatio ? <LockIcon /> : <UnlockIcon />}
         </button>
-        {/* Adjust image size to Viewport toggle */}
+        {/* Fit image to Viewport toggle */}
         <button
           type="button"
           onClick={() => {
