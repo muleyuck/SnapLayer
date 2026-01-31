@@ -51,6 +51,11 @@
       "bracketSpacing": true
     }
   },
+  "json": {
+    "formatter": {
+      "enabled": false
+    }
+  },
   "assist": {
     "enabled": true,
     "actions": {
