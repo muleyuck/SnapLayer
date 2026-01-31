@@ -16,7 +16,7 @@ export function processSvgImage(imageData: string | undefined): string | undefin
     }
 
     if (svgContent.includes("preserveAspectRatio")) {
-      svgContent = svgContent.replace(/preserveAspectRatio="[^"]*"/, 'preserveAspectRatio="none"')
+      svgContent = svgContent.replace(/preserveAspectRatio=["'][^"']*["']/, 'preserveAspectRatio="none"')
     } else {
       svgContent = svgContent.replace(/<svg/, '<svg preserveAspectRatio="none"')
     }
