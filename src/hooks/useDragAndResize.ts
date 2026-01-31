@@ -44,7 +44,7 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
       ;(document.activeElement as HTMLElement)?.blur?.()
     }
     const target = e.target as HTMLElement
-    if (NO_DRAGGABLE_ELEMENTS.includes(target.tagName) || target.dataset.resize) {
+    if (NO_DRAGGABLE_ELEMENTS.includes(target.tagName)) {
       return
     }
     setIsDragging(true)
