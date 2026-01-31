@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SnapLayer",
   "version": "0.1.0",
-  "description": "",
+  "description": "lets you overlay JPEG/PNG/SVG images on any webpage.",
   "permissions": [
     "activeTab"
   ],
