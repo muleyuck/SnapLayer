@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import ImageUploader from "./ImageUploader"
+import ImageUploader from "@/components/ImageUploader"
 
 const mockChrome = {
   tabs: {

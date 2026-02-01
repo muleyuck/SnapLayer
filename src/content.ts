@@ -1,8 +1,8 @@
 import { createElement } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { ImageOverlay } from "@/components/ImageOverlay"
+import contentCss from "@/content.css?inline"
 import type { SendMessage } from "@/types/Message"
-import contentCss from "./content.css?inline"
 
 // Keep root globally to avoid creating multiple root elements
 let root: Root | null = null

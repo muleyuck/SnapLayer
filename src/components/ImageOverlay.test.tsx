@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { ImageOverlay } from "./ImageOverlay"
+import { ImageOverlay } from "@/components/ImageOverlay"
 
 describe("ImageOverlay", () => {
   const mockOnDelete = vi.fn()
