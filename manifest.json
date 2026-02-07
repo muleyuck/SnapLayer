@@ -4,17 +4,8 @@
   "version": "0.1.0",
   "description": "lets you overlay JPEG/PNG/SVG images on any webpage.",
   "permissions": [
-    "activeTab"
-  ],
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content.ts"
-      ]
-    }
+    "activeTab",
+    "scripting"
   ],
   "action": {
     "default_popup": "index.html"
