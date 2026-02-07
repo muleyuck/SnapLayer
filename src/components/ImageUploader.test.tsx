@@ -5,7 +5,9 @@ import ImageUploader from "@/components/ImageUploader"
 const mockChrome = {
   tabs: {
     query: vi.fn(),
-    sendMessage: vi.fn(),
+  },
+  scripting: {
+    executeScript: vi.fn(),
   },
 }
 
@@ -13,7 +15,7 @@ describe("ImageUploader", () => {
   beforeEach(() => {
     vi.stubGlobal("chrome", mockChrome)
     mockChrome.tabs.query.mockReset()
-    mockChrome.tabs.sendMessage.mockReset()
+    mockChrome.scripting.executeScript.mockReset()
     vi.spyOn(window, "close").mockImplementation(() => {})
   })
 
@@ -30,7 +32,7 @@ describe("ImageUploader", () => {
     it("should convert selected file to data URL and send message", async () => {
       const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
       mockChrome.tabs.query.mockResolvedValue([{ id: 1, url: "https://example.com" }])
-      mockChrome.tabs.sendMessage.mockResolvedValue(undefined)
+      mockChrome.scripting.executeScript.mockResolvedValue([{ result: { success: true } }])
 
       render(<ImageUploader />)
 
@@ -44,10 +46,12 @@ describe("ImageUploader", () => {
       fireEvent.change(input)
 
       await waitFor(() => {
-        expect(mockChrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-          type: "ADD_IMAGE",
-          imageData: expect.stringContaining("data:"),
-        })
+        expect(mockChrome.scripting.executeScript).toHaveBeenCalledWith(
+          expect.objectContaining({
+            target: { tabId: 1 },
+            args: expect.arrayContaining([expect.stringContaining("data:")]),
+          }),
+        )
         expect(closeSpy).toHaveBeenCalled()
       })
     })
@@ -130,7 +134,7 @@ describe("ImageUploader", () => {
     it("should handle pasted image from clipboard", async () => {
       const closeSpy = vi.spyOn(window, "close").mockImplementation(() => {})
       mockChrome.tabs.query.mockResolvedValue([{ id: 1, url: "https://example.com" }])
-      mockChrome.tabs.sendMessage.mockResolvedValue(undefined)
+      mockChrome.scripting.executeScript.mockResolvedValue([{ result: { success: true } }])
 
       render(<ImageUploader />)
 
@@ -147,17 +151,19 @@ describe("ImageUploader", () => {
       fireEvent.paste(document, { clipboardData })
 
       await waitFor(() => {
-        expect(mockChrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-          type: "ADD_IMAGE",
-          imageData: expect.stringContaining("data:"),
-        })
+        expect(mockChrome.scripting.executeScript).toHaveBeenCalledWith(
+          expect.objectContaining({
+            target: { tabId: 1 },
+            args: expect.arrayContaining([expect.stringContaining("data:")]),
+          }),
+        )
         expect(closeSpy).toHaveBeenCalled()
       })
     })
 
     it("should handle pasted SVG text", async () => {
       mockChrome.tabs.query.mockResolvedValue([{ id: 1, url: "https://example.com" }])
-      mockChrome.tabs.sendMessage.mockResolvedValue(undefined)
+      mockChrome.scripting.executeScript.mockResolvedValue([{ result: { success: true } }])
 
       render(<ImageUploader />)
 
@@ -175,10 +181,12 @@ describe("ImageUploader", () => {
       fireEvent.paste(document, { clipboardData })
 
       await waitFor(() => {
-        expect(mockChrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-          type: "ADD_IMAGE",
-          imageData: expect.stringContaining("data:image/svg+xml"),
-        })
+        expect(mockChrome.scripting.executeScript).toHaveBeenCalledWith(
+          expect.objectContaining({
+            target: { tabId: 1 },
+            args: expect.arrayContaining([expect.stringContaining("data:image/svg+xml")]),
+          }),
+        )
       })
     })
 
@@ -204,9 +212,11 @@ describe("ImageUploader", () => {
   })
 
   describe("error handling", () => {
-    it("should display error when content script not loaded", async () => {
+    it("should display error when executeScript fails", async () => {
       mockChrome.tabs.query.mockResolvedValue([{ id: 1, url: "https://example.com" }])
-      mockChrome.tabs.sendMessage.mockRejectedValue(new Error("Could not establish connection"))
+      mockChrome.scripting.executeScript.mockResolvedValue([
+        { result: { success: false, error: "Failed to load module" } },
+      ])
 
       render(<ImageUploader />)
 
@@ -220,7 +230,27 @@ describe("ImageUploader", () => {
       fireEvent.change(input)
 
       await waitFor(() => {
-        expect(screen.getByText("Please reload the page and try again")).toBeInTheDocument()
+        expect(screen.getByText("Failed to load module")).toBeInTheDocument()
+      })
+    })
+
+    it("should display fallback error when executeScript returns no result", async () => {
+      mockChrome.tabs.query.mockResolvedValue([{ id: 1, url: "https://example.com" }])
+      mockChrome.scripting.executeScript.mockResolvedValue([{ result: undefined }])
+
+      render(<ImageUploader />)
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      const file = new File(["test"], "test.png", { type: "image/png" })
+
+      Object.defineProperty(input, "files", {
+        value: [file],
+      })
+
+      fireEvent.change(input)
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to add image to page")).toBeInTheDocument()
       })
     })
 

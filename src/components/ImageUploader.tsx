@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import type { SendMessage } from "@/types/Message"
+import contentScriptPath from "@/content?script&module"
 
 const fileToDataUrl = (file: File | Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -16,16 +16,23 @@ const sendMessage = async (dataUrl: string) => {
     throw new Error("Not found Active Tab")
   }
 
-  const message: SendMessage = {
-    type: "ADD_IMAGE",
-    imageData: dataUrl,
-  }
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: async (modulePath: string, imageData: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const { addImage } = await import(chrome.runtime.getURL(modulePath))
+        addImage(imageData)
+        return { success: true }
+      } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : String(e) }
+      }
+    },
+    args: [contentScriptPath, dataUrl],
+  })
 
-  try {
-    await chrome.tabs.sendMessage(tab.id, message)
-  } catch {
-    // Content script not loaded yet - reload the tab to inject it
-    throw new Error("Please reload the page and try again")
+  const result = results[0]?.result
+  if (!result?.success) {
+    throw new Error(result?.error ?? "Failed to add image to page")
   }
 
   // Close popup after successful upload
