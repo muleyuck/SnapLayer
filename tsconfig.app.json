@@ -11,7 +11,8 @@
     "module": "ESNext",
     "types": [
       "vite/client",
-      "chrome"
+      "chrome",
+      "@crxjs/vite-plugin/client"
     ],
     "skipLibCheck": true,
     /* Bundler mode */

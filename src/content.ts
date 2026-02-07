@@ -2,7 +2,6 @@ import { createElement } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { ImageOverlay } from "@/components/ImageOverlay"
 import contentCss from "@/content.css?inline"
-import type { SendMessage } from "@/types/Message"
 
 // Keep root globally to avoid creating multiple root elements
 let root: Root | null = null
@@ -36,13 +35,8 @@ const renderApp = (imageData?: string) => {
   root.render(createElement(ImageOverlay, { imageData: imageData, onDelete: handleDeleteImage }))
 }
 
-// Receive messages when image uploaded in popup UI
-chrome.runtime.onMessage.addListener((message: SendMessage, _sender, sendResponse) => {
-  if (message.type === "ADD_IMAGE" && message.imageData) {
-    renderApp(message.imageData)
-    sendResponse({ success: true })
-  }
-  return true
-})
+export const addImage = (imageData: string) => {
+  renderApp(imageData)
+}
 
 console.log("[SnapLayer] Content script loaded")
