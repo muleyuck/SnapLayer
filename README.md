@@ -1,21 +1,19 @@
-[![unit-test](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml/badge.svg)](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/public/logo-dark.svg">
   <img width="512" src="/public/logo-light.svg">
 </picture>
 
-# SnapLayer
+[![unit-test](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml/badge.svg)](https://github.com/muleyuck/SnapLayer/actions/workflows/unit-test.yml)
+![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)
+[![Release](https://img.shields.io/github/release/muleyuck/SnapLayer.svg)](https://github.com/muleyuck/SnapLayer/releases/latest)
 
 🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images on any webpage.  
 Perfect for designers comparing mockups, developers checking pixel-perfect implementations, or anyone who needs to visually compare images against web content.
 
-<!--
 ## Screenshots
 
-TODO: Add screenshots/GIF demo here
-![SnapLayer Demo](docs/demo.gif)
--->
+![SnapLayer screenshot](https://github.com/user-attachments/assets/ea26b139-053c-46d1-8e8b-2c0fa4391f5f)
 
 ## Features
 
