@@ -31,7 +31,6 @@
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
-    "globals": "^16.5.0",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "typescript": "~5.9.3",
