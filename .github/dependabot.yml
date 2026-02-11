@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    assignees:
+      - muleyuck
+    schedule:
+      interval: weekly
+      day: saturday
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - dependabot
