@@ -34,7 +34,7 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
           jq --arg v "$VERSION" '.version = $v' manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json
       - name: install
-        run: rm -rf node_modules package-lock.json && npm i
+        run: npm ci
       - name: build
         run: npm run build
       - name: Archive Release
