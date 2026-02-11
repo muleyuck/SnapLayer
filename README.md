@@ -27,7 +27,11 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 ## Installation
 
-### Manual Installation (Developer Mode)
+### Recommend
+
+- [Chrome Web Store](https://chromewebstore.google.com/detail/{name}/{id})
+
+### Optional (Manual install from source)
 
 1. Clone or download this repository
 2. Build the extension:
