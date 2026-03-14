@@ -1,6 +1,15 @@
 import { cva } from "class-variance-authority"
 import { useState } from "react"
-import { CloseIcon, ExpandIcon, EyeIcon, EyeSlashIcon, LockIcon, SettingsIcon, UnlockIcon } from "@/components/Icons"
+import {
+  CloseIcon,
+  ExpandIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  LockIcon,
+  SettingsIcon,
+  SettingsIconFilled,
+  UnlockIcon,
+} from "@/components/Icons"
 import type { ImageOverlayAction, ImageOverlayState } from "@/hooks/imageOverlayReducer"
 
 const toolbarCva = cva("flex items-center gap-1.5 overflow-hidden transition-all duration-150", {
@@ -11,7 +20,7 @@ const toolbarCva = cva("flex items-center gap-1.5 overflow-hidden transition-all
     },
   },
 })
-const inputCva = cva("w-14 rounded border border-natural-600 bg-gray-800 px-1.5 py-0.5")
+const inputCva = cva("w-16 rounded border border-natural-600 bg-gray-800 px-1.5 py-0.5")
 const buttonCva = cva("cursor-pointer rounded p-0.5 text-sm", {
   variants: {
     color: {
@@ -45,9 +54,9 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
         onClick={() => setIsToolbarExpand((v) => !v)}
         aria-label={isToolbarExpand ? "Collapse toolbar" : "Expand toolbar"}
         aria-expanded={isToolbarExpand}
-        className={buttonCva({ color: "natural", rightSpace: false })} // "cursor-pointer rounded p-0.5 hover:bg-gray-700"}
+        className={buttonCva({ color: "natural", rightSpace: false })}
       >
-        <SettingsIcon />
+        {isToolbarExpand ? <SettingsIcon /> : <SettingsIconFilled />}
       </button>
 
       {/* Expandable content */}
