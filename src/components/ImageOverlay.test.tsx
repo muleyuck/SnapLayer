@@ -193,6 +193,52 @@ describe("ImageOverlay", () => {
     })
   })
 
+  describe("Arrow key movement", () => {
+    it("should move by 1px in the correct axis per direction", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+
+      const initialTop = Number.parseFloat(fieldset.style.top)
+      fireEvent.keyDown(fieldset, { key: "ArrowUp" })
+      expect(Number.parseFloat(fieldset.style.top)).toBe(initialTop - 1)
+      fireEvent.keyDown(fieldset, { key: "ArrowDown" })
+      expect(Number.parseFloat(fieldset.style.top)).toBe(initialTop)
+
+      const initialLeft = Number.parseFloat(fieldset.style.left)
+      fireEvent.keyDown(fieldset, { key: "ArrowLeft" })
+      expect(Number.parseFloat(fieldset.style.left)).toBe(initialLeft - 1)
+      fireEvent.keyDown(fieldset, { key: "ArrowRight" })
+      expect(Number.parseFloat(fieldset.style.left)).toBe(initialLeft)
+    })
+
+    it("should move 10px when Shift is held", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+
+      const initialTop = Number.parseFloat(fieldset.style.top)
+      fireEvent.keyDown(fieldset, { key: "ArrowUp", shiftKey: true })
+      expect(Number.parseFloat(fieldset.style.top)).toBe(initialTop - 10)
+      fireEvent.keyDown(fieldset, { key: "ArrowDown", shiftKey: true })
+      expect(Number.parseFloat(fieldset.style.top)).toBe(initialTop)
+
+      const initialLeft = Number.parseFloat(fieldset.style.left)
+      fireEvent.keyDown(fieldset, { key: "ArrowLeft", shiftKey: true })
+      expect(Number.parseFloat(fieldset.style.left)).toBe(initialLeft - 10)
+      fireEvent.keyDown(fieldset, { key: "ArrowRight", shiftKey: true })
+      expect(Number.parseFloat(fieldset.style.left)).toBe(initialLeft)
+    })
+
+    it("should not move when Arrow key is pressed inside an input", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      fireEvent.pointerEnter(fieldset)
+      const initialLeft = Number.parseFloat(fieldset.style.left)
+      const widthInput = screen.getByRole("spinbutton", { name: /width/i })
+      fireEvent.keyDown(widthInput, { key: "ArrowRight" })
+      expect(Number.parseFloat(fieldset.style.left)).toBe(initialLeft)
+    })
+  })
+
   describe("opacity control", () => {
     it("should apply opacity style to image", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)

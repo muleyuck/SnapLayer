@@ -7,6 +7,16 @@ import { processSvgImage } from "@/utils/processSvgImage"
 
 const MAX_Z_INDEX = 2147483647
 
+const ARROW_MOVE_STEP = 1
+const ARROW_MOVE_STEP_LARGE = 10
+
+const ARROW_KEY_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
+  ArrowUp: { dx: 0, dy: -1 },
+  ArrowDown: { dx: 0, dy: 1 },
+  ArrowLeft: { dx: -1, dy: 0 },
+  ArrowRight: { dx: 1, dy: 0 },
+}
+
 interface ImageOverlayProps {
   imageData: string | undefined
   onDelete: () => void
@@ -57,6 +67,13 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
       event.preventDefault()
       event.stopPropagation()
       onDelete()
+    }
+    const direction = ARROW_KEY_DIRECTIONS[event.key]
+    if (direction && (event.target as HTMLElement).tagName !== "INPUT") {
+      event.preventDefault()
+      event.stopPropagation()
+      const step = event.shiftKey ? ARROW_MOVE_STEP_LARGE : ARROW_MOVE_STEP
+      dispatch({ type: "MOVE_POSITION", payload: { dx: direction.dx * step, dy: direction.dy * step } })
     }
   }
 
