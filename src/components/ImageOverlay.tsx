@@ -1,5 +1,5 @@
 import { cva } from "class-variance-authority"
-import { useEffect, useMemo, useReducer, useState } from "react"
+import { useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { ImageToolbar } from "@/components/ImageToolbar"
 import { IMAGE_OVELAY_INITIAL_STATE, imageOverlayReducer } from "@/hooks/imageOverlayReducer"
 import { RESIZE_DIRECTIONS, useDragAndResize } from "@/hooks/useDragAndResize"
@@ -12,7 +12,7 @@ interface ImageOverlayProps {
   onDelete: () => void
 }
 
-const fieldsetCva = cva("fixed m-0 box-border select-none border-none p-0", {
+const fieldsetCva = cva("fixed m-0 box-border select-none border-none p-0 focus:outline-none", {
   variants: {
     dragging: {
       true: "cursor-grabbing",
@@ -50,6 +50,16 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
 
   const { isDragging, isResizing, handleDragStart, handleResizeStart } = useDragAndResize({ state, dispatch })
 
+  const fieldsetRef = useRef<HTMLFieldSetElement>(null)
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLFieldSetElement>) => {
+    if (event.key === "Backspace" && (event.target as HTMLElement).tagName !== "INPUT") {
+      event.preventDefault()
+      event.stopPropagation()
+      onDelete()
+    }
+  }
+
   // Set initial size based on image dimensions
   useEffect(() => {
     const img = new Image()
@@ -67,6 +77,7 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
 
   return (
     <fieldset
+      ref={fieldsetRef}
       aria-label="Draggable image overlay"
       className={fieldsetCva({ dragging: isDragging })}
       style={{
@@ -77,7 +88,12 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
         zIndex: MAX_Z_INDEX,
         touchAction: "none",
       }}
-      onPointerDown={handleDragStart}
+      tabIndex={-1}
+      onPointerDown={(e) => {
+        handleDragStart(e)
+        fieldsetRef.current?.focus()
+      }}
+      onKeyDown={handleKeyDown}
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
     >

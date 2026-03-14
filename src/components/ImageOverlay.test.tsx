@@ -165,6 +165,34 @@ describe("ImageOverlay", () => {
     })
   })
 
+  describe("Backspace key deletion", () => {
+    it("should call onDelete when Backspace is pressed on the overlay", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group")
+      fireEvent.pointerDown(fieldset)
+      fireEvent.keyDown(fieldset, { key: "Backspace" })
+      expect(mockOnDelete).toHaveBeenCalledTimes(1)
+    })
+
+    it("should not call onDelete when other keys are pressed on the overlay", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group")
+      fireEvent.keyDown(fieldset, { key: "Delete" })
+      fireEvent.keyDown(fieldset, { key: "Enter" })
+      fireEvent.keyDown(fieldset, { key: "Escape" })
+      expect(mockOnDelete).not.toHaveBeenCalled()
+    })
+
+    it("should not call onDelete when Backspace is pressed inside an input", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+      const fieldset = screen.getByRole("group")
+      fireEvent.pointerEnter(fieldset)
+      const widthInput = screen.getByRole("spinbutton", { name: /width/i })
+      fireEvent.keyDown(widthInput, { key: "Backspace" })
+      expect(mockOnDelete).not.toHaveBeenCalled()
+    })
+  })
+
   describe("opacity control", () => {
     it("should apply opacity style to image", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
