@@ -35,6 +35,18 @@ describe("imageOverlayReducer", () => {
     })
   })
 
+  describe("MOVE_POSITION", () => {
+    it("should add delta to current position (positive and negative)", () => {
+      const state = IMAGE_OVELAY_INITIAL_STATE
+
+      const moved = imageOverlayReducer(state, { type: "MOVE_POSITION", payload: { dx: 5, dy: 10 } })
+      expect(moved.position).toEqual({ x: 105, y: 110 })
+
+      const movedBack = imageOverlayReducer(moved, { type: "MOVE_POSITION", payload: { dx: -5, dy: -10 } })
+      expect(movedBack.position).toEqual({ x: 100, y: 100 })
+    })
+  })
+
   describe("SET_SIZE", () => {
     it("should update size", () => {
       const state = IMAGE_OVELAY_INITIAL_STATE

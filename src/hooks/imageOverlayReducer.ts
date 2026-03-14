@@ -28,6 +28,7 @@ export const IMAGE_OVELAY_INITIAL_STATE: ImageOverlayState = {
 
 export type ImageOverlayAction =
   | { type: "SET_POSITION"; payload: Position }
+  | { type: "MOVE_POSITION"; payload: { dx: number; dy: number } }
   | { type: "SET_SIZE"; payload: Size }
   | { type: "SET_ASPECT_RATIO"; payload: number }
   | { type: "TOGGLE_LOCK_ASPECT_RATIO" }
@@ -38,6 +39,11 @@ export function imageOverlayReducer(state: ImageOverlayState, action: ImageOverl
   switch (action.type) {
     case "SET_POSITION":
       return { ...state, position: action.payload }
+    case "MOVE_POSITION":
+      return {
+        ...state,
+        position: { x: state.position.x + action.payload.dx, y: state.position.y + action.payload.dy },
+      }
     case "SET_SIZE":
       return { ...state, size: action.payload }
     case "SET_ASPECT_RATIO":
