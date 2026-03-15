@@ -2,13 +2,14 @@ import { cva } from "class-variance-authority"
 import { useState } from "react"
 import {
   CloseIcon,
+  CollapseIcon,
   ExpandIcon,
   EyeIcon,
   EyeSlashIcon,
   LockIcon,
+  LockSlashIcon,
   SettingsIcon,
   SettingsIconFilled,
-  UnlockIcon,
 } from "@/components/Icons"
 import type { ImageOverlayAction, ImageOverlayState } from "@/hooks/imageOverlayReducer"
 
@@ -42,6 +43,10 @@ interface ImageToolbarProps {
 
 export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) => {
   const [isToolbarExpand, setIsToolbarExpand] = useState(true)
+  const [preExpandSnapshot, setPreExpandSnapshot] = useState<{
+    position: { x: number; y: number }
+    size: { width: number; height: number }
+  } | null>(null)
   return (
     <div
       role="toolbar"
@@ -105,22 +110,29 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
           aria-label={state.lockAspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
           className={buttonCva({ color: "natural", rightSpace: false })}
         >
-          {state.lockAspectRatio ? <LockIcon /> : <UnlockIcon />}
+          {state.lockAspectRatio ? <LockIcon /> : <LockSlashIcon />}
         </button>
         {/* Fit image to Viewport toggle */}
         <button
           type="button"
           onClick={() => {
-            const width = window.innerWidth
-            const height = state.lockAspectRatio ? Math.round(width / state.aspectRatio) : window.innerHeight
-            dispatch({ type: "SET_SIZE", payload: { width, height } })
-            dispatch({ type: "SET_POSITION", payload: { x: 0, y: 0 } })
+            if (preExpandSnapshot === null) {
+              setPreExpandSnapshot({ position: state.position, size: state.size })
+              const width = window.innerWidth
+              const height = state.lockAspectRatio ? Math.round(width / state.aspectRatio) : window.innerHeight
+              dispatch({ type: "SET_SIZE", payload: { width, height } })
+              dispatch({ type: "SET_POSITION", payload: { x: 0, y: 0 } })
+            } else {
+              dispatch({ type: "SET_SIZE", payload: preExpandSnapshot.size })
+              dispatch({ type: "SET_POSITION", payload: preExpandSnapshot.position })
+              setPreExpandSnapshot(null)
+            }
           }}
-          title="Fit to Viewport"
-          aria-label="Fit to Viewport"
+          title={preExpandSnapshot ? "Restore size" : "Fit to Viewport"}
+          aria-label={preExpandSnapshot ? "Restore size" : "Fit to Viewport"}
           className={buttonCva({ color: "natural", rightSpace: false })}
         >
-          <ExpandIcon />
+          {preExpandSnapshot ? <CollapseIcon /> : <ExpandIcon />}
         </button>
         {/* Visibility toggle */}
         <button

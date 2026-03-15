@@ -16,7 +16,7 @@ export const LockIcon = ({ size = 14 }) => (
   </svg>
 )
 
-export const UnlockIcon = ({ size = 14 }) => (
+export const LockSlashIcon = ({ size = 14 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
@@ -30,7 +30,8 @@ export const UnlockIcon = ({ size = 14 }) => (
     strokeLinejoin="round"
   >
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    <line x1="2" y1="2" x2="22" y2="22" />
   </svg>
 )
 
@@ -118,6 +119,33 @@ export const ExpandIcon = ({ size = 14 }) => (
 
     <polyline points="21 15 21 21 15 21" />
     <line x1="21" y1="21" x2="14" y2="14" />
+  </svg>
+)
+
+export const CollapseIcon = ({ size = 14 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="10 3 10 10 3 10" />
+    <line x1="10" y1="10" x2="3" y2="3" />
+
+    <polyline points="14 3 14 10 21 10" />
+    <line x1="14" y1="10" x2="21" y2="3" />
+
+    <polyline points="10 21 10 14 3 14" />
+    <line x1="10" y1="14" x2="3" y2="21" />
+
+    <polyline points="14 21 14 14 21 14" />
+    <line x1="14" y1="14" x2="21" y2="21" />
   </svg>
 )
 
