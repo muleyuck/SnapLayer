@@ -6,9 +6,9 @@ import {
   EyeIcon,
   EyeSlashIcon,
   LockIcon,
+  LockSlashIcon,
   SettingsIcon,
   SettingsIconFilled,
-  UnlockIcon,
 } from "@/components/Icons"
 import type { ImageOverlayAction, ImageOverlayState } from "@/hooks/imageOverlayReducer"
 
@@ -105,7 +105,7 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
           aria-label={state.lockAspectRatio ? "Unlock aspect ratio" : "Lock aspect ratio"}
           className={buttonCva({ color: "natural", rightSpace: false })}
         >
-          {state.lockAspectRatio ? <LockIcon /> : <UnlockIcon />}
+          {state.lockAspectRatio ? <LockIcon /> : <LockSlashIcon />}
         </button>
         {/* Fit image to Viewport toggle */}
         <button

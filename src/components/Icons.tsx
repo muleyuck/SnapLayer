@@ -16,7 +16,7 @@ export const LockIcon = ({ size = 14 }) => (
   </svg>
 )
 
-export const UnlockIcon = ({ size = 14 }) => (
+export const LockSlashIcon = ({ size = 14 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
@@ -30,7 +30,8 @@ export const UnlockIcon = ({ size = 14 }) => (
     strokeLinejoin="round"
   >
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    <line x1="2" y1="2" x2="22" y2="22" />
   </svg>
 )
 
