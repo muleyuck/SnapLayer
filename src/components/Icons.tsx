@@ -122,6 +122,33 @@ export const ExpandIcon = ({ size = 14 }) => (
   </svg>
 )
 
+export const CollapseIcon = ({ size = 14 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="10 3 10 10 3 10" />
+    <line x1="10" y1="10" x2="3" y2="3" />
+
+    <polyline points="14 3 14 10 21 10" />
+    <line x1="14" y1="10" x2="21" y2="3" />
+
+    <polyline points="10 21 10 14 3 14" />
+    <line x1="10" y1="14" x2="3" y2="21" />
+
+    <polyline points="14 21 14 14 21 14" />
+    <line x1="14" y1="14" x2="21" y2="21" />
+  </svg>
+)
+
 export const CloseIcon = ({ size = 14 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
