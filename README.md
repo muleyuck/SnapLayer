@@ -29,7 +29,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 ### Recommend
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/{name}/{id})
+- [Chrome Web Store](https://chromewebstore.google.com/detail/snaplayer/mlfijeojnbmhecfigldlcmjfjbcdgpgm)
 
 ### Optional (Manual install from source)
 
