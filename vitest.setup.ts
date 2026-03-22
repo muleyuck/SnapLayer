@@ -1,11 +1,15 @@
 import "@testing-library/jest-dom/vitest"
-import { beforeEach, vi } from "vitest"
+import { beforeAll, beforeEach, vi } from "vitest"
 
 // Chrome API mock
+// Use beforeAll so this runs after WxtVitest's extensionApiMock setupFile (which also stubs chrome)
 const chromeMock = {
   tabs: {
     query: vi.fn(),
     sendMessage: vi.fn(),
+  },
+  scripting: {
+    executeScript: vi.fn(),
   },
   runtime: {
     onMessage: {
@@ -15,7 +19,9 @@ const chromeMock = {
   },
 }
 
-vi.stubGlobal("chrome", chromeMock)
+beforeAll(() => {
+  vi.stubGlobal("chrome", chromeMock)
+})
 
 // Mock Image constructor (jsdom doesn't fire onload for data URLs)
 class MockImage {
