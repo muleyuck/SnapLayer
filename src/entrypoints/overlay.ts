@@ -1,7 +1,9 @@
 import { createElement } from "react"
 import { createRoot, type Root } from "react-dom/client"
+import { defineUnlistedScript } from "wxt/utils/define-unlisted-script"
 import { ImageOverlay } from "@/components/ImageOverlay"
-import contentCss from "@/content.css?inline"
+import contentCss from "@/index.css?inline"
+import type { SnapLayerMessage } from "@/types/messages"
 
 // Keep root globally to avoid creating multiple root elements
 let root: Root | null = null
@@ -11,7 +13,7 @@ const handleDeleteImage = () => {
   root = null
 }
 
-const renderApp = (imageData?: string) => {
+const addImage = (imageData: string) => {
   if (!root) {
     // Create element with Shadow DOM for style isolation
     const snapLayerHost = document.createElement("div")
@@ -32,11 +34,16 @@ const renderApp = (imageData?: string) => {
 
     root = createRoot(snapLayerRoot)
   }
-  root.render(createElement(ImageOverlay, { imageData: imageData, onDelete: handleDeleteImage }))
+  root.render(createElement(ImageOverlay, { imageData, onDelete: handleDeleteImage }))
 }
 
-export const addImage = (imageData: string) => {
-  renderApp(imageData)
-}
+// Register message listener synchronously at module top-level.
+// WXT compiles this as an IIFE, so the listener is guaranteed to be registered
+// before chrome.scripting.executeScript({ files }) resolves in the popup.
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type === "ADD_IMAGE") {
+    addImage((message as SnapLayerMessage).imageData)
+  }
+})
 
-console.log("[SnapLayer] Content script loaded")
+export default defineUnlistedScript(() => {})

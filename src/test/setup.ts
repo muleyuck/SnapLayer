@@ -7,6 +7,9 @@ const chromeMock = {
     query: vi.fn(),
     sendMessage: vi.fn(),
   },
+  scripting: {
+    executeScript: vi.fn(),
+  },
   runtime: {
     onMessage: {
       addListener: vi.fn(),
