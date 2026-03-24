@@ -10,7 +10,7 @@
     "format": "biome check --write *",
     "test": "vitest",
     "test:cov": "vitest --coverage",
-    "prepare": "husky"
+    "prepare": "wxt prepare && husky"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -32,7 +32,7 @@
     "husky": "^9.1.7",
     "jsdom": "^28.1.0",
     "typescript": "~5.9.3",
-    "vite": "^8.0.1",
+    "vite": "^8.0.2",
     "vitest": "^4.1.0",
     "wxt": "^0.20.20"
   },

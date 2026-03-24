@@ -23,6 +23,7 @@ export default defineConfig({
       128: "favicon128.png",
     },
   },
+  outDir: "dist",
   vite: () => ({
     plugins: [react(), tailwindcss()],
   }),
