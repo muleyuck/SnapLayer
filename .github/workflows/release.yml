@@ -32,7 +32,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
-          jq --arg v "$VERSION" '.version = $v' manifest.json > manifest.json.tmp && mv manifest.json.tmp manifest.json
+          sed -i "s/version: \"[^\"]*\"/version: \"$VERSION\"/" wxt.config.ts
       - name: install
         run: npm ci
       - name: build

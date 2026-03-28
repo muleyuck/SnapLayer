@@ -7,7 +7,7 @@ export default defineConfig({
   imports: false,
   manifest: {
     name: "SnapLayer",
-    version: "0.1.0",
+    version: "0.0.0",
     description: "lets you overlay JPEG/PNG/SVG images on any webpage.",
     permissions: ["activeTab", "scripting"],
     web_accessible_resources: [
