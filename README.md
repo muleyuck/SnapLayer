@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/release/muleyuck/SnapLayer.svg)](https://github.com/muleyuck/SnapLayer/releases/latest)
 
 🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images on any webpage.  
-Perfect for designers comparing mockups, developers checking pixel-perfect implementations, or anyone who needs to visually compare images against web content.
+Perfect for designers comparing mockups, developers checking pixel-perfect implementations, or anyone who needs to visually compare images against web content. No more switching tabs — compare side by side in real time.
 
 ## Screenshots
 
@@ -24,6 +24,10 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 - **Visibility Toggle** - Quickly show/hide the overlay
 - **JPEG/PNG & SVG Support** - Works with common image formats
 - **Style Isolation** - Shadow DOM ensures no conflicts with host page styles
+- **Keyboard Shortcuts** - Move with arrow keys; Shift+arrow for 10 px jumps; Backspace to delete
+- **Clipboard Paste** - Paste images with Cmd/Ctrl+V, including SVG as plain text
+- **Fit to Viewport** - Expand image to fill the viewport width and toggle back to original size
+- **Manual Size Input** - Type exact pixel dimensions directly in the toolbar
 
 ## Installation
 
@@ -56,10 +60,21 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 | Control | Description |
 |---------|-------------|
+| Width / Height | Enter exact pixel dimensions |
+| Expand Icon | Fit to viewport width (click again to restore) |
 | Opacity Slider | Adjust image transparency (0-100%) |
 | Lock Icon | Toggle aspect ratio lock |
 | Eye Icon | Toggle image visibility |
 | Trash Icon | Remove the overlay |
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| Arrow keys | Move overlay 1 px |
+| Shift + Arrow keys | Move overlay 10 px |
+| Backspace / Delete | Remove overlay |
+| Cmd/Ctrl + V | Paste image from clipboard |
 
 ## License
 
