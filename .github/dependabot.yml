@@ -1,9 +1,30 @@
 version: 2
 updates:
+  - package-ecosystem: github-actions
+    directory: /
+    assignees:
+      - muleyuck
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+    schedule:
+      interval: weekly
+      day: saturday
+      timezone: Asia/Tokyo
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 10
+
   - package-ecosystem: npm
     directory: /
     assignees:
       - muleyuck
+    groups:
+      dependencies:
+        patterns:
+          - "*"
     schedule:
       interval: weekly
       day: saturday
@@ -12,7 +33,7 @@ updates:
       - dependency-name: '*'
         update-types:
           - version-update:semver-major
+    commit-message:
+      prefix: "chore"
+      include: "scope"
     open-pull-requests-limit: 10
-    labels:
-      - dependencies
-      - dependabot
