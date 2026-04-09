@@ -41,7 +41,7 @@ export default function ImageUploader({ onImage }: Props) {
     async (e: ClipboardEvent) => {
       const items = e.clipboardData?.items
       try {
-        if (!items || !items.length) {
+        if (!items?.length) {
           throw new Error("Cant't get pasted item from clipboard")
         }
         const item = items[0]
