@@ -36,5 +36,5 @@
     "vitest": "^4.1.4",
     "wxt": "^0.20.20"
   },
-  "overrides": {}
+  "packageManager": "pnpm@10.33.0"
 }
