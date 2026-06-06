@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "wxt",
-    "build": "wxt build",
+    "dev": "vite build --watch --app",
+    "build": "tsc --noEmit && vite build --app",
     "lint": "biome check .",
     "format": "biome check --write *",
     "test": "vitest",
     "test:cov": "vitest --coverage",
-    "prepare": "wxt prepare && husky"
+    "prepare": "husky"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -33,13 +33,7 @@
     "jsdom": "^28.1.0",
     "typescript": "~5.9.3",
     "vite": "^8.0.16",
-    "vitest": "^4.1.8",
-    "wxt": "^0.20.26"
+    "vitest": "^4.1.8"
   },
-  "packageManager": "pnpm@10.33.0",
-  "pnpm": {
-    "overrides": {
-      "tmp": "^0.2.7"
-    }
-  }
+  "packageManager": "pnpm@10.33.0"
 }

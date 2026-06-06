@@ -1,9 +1,13 @@
+import { resolve } from "node:path"
+
 import react from "@vitejs/plugin-react"
 import { defineConfig } from "vitest/config"
-import { WxtVitest } from "wxt/testing/vitest-plugin"
 
 export default defineConfig({
-  plugins: [react(), WxtVitest()],
+  plugins: [react()],
+  resolve: {
+    alias: { "@": resolve(__dirname, "./src") },
+  },
   test: {
     environment: "jsdom",
     globals: true,
