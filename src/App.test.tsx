@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import Popup from "./Popup"
+import App from "./App"
+
+type TabQueryFn = (queryInfo: chrome.tabs.QueryInfo) => Promise<chrome.tabs.Tab[]>
+type ExecuteScriptFn = (
+  injection: chrome.scripting.ScriptInjection<unknown[], unknown>,
+) => Promise<chrome.scripting.InjectionResult<unknown>[]>
 
 describe("Popup sendMessage", () => {
   beforeEach(() => {
@@ -18,10 +23,12 @@ describe("Popup sendMessage", () => {
   }
 
   it("sends message directly when overlay is already injected (no executeScript)", async () => {
-    vi.mocked(chrome.tabs.query).mockResolvedValue([{ id: 1, url: "https://example.com" } as chrome.tabs.Tab])
+    vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
+      { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
+    ])
     vi.mocked(chrome.tabs.sendMessage).mockResolvedValue(undefined)
 
-    render(<Popup />)
+    render(<App />)
     uploadFile()
 
     await waitFor(() => {
@@ -35,18 +42,20 @@ describe("Popup sendMessage", () => {
   })
 
   it("injects script then sends message when overlay is not yet injected", async () => {
-    vi.mocked(chrome.tabs.query).mockResolvedValue([{ id: 1, url: "https://example.com" } as chrome.tabs.Tab])
+    vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
+      { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
+    ])
     vi.mocked(chrome.tabs.sendMessage)
       .mockRejectedValueOnce(new Error("Could not establish connection"))
       .mockResolvedValueOnce(undefined)
-    vi.mocked(chrome.scripting.executeScript).mockResolvedValue([] as chrome.scripting.InjectionResult[])
+    vi.mocked(chrome.scripting.executeScript as ExecuteScriptFn).mockResolvedValue([])
 
-    render(<Popup />)
+    render(<App />)
     uploadFile()
 
     await waitFor(() => {
       expect(chrome.scripting.executeScript).toHaveBeenCalledWith(
-        expect.objectContaining({ target: { tabId: 1 }, files: expect.arrayContaining(["overlay.js"]) }),
+        expect.objectContaining({ target: { tabId: 1 }, files: expect.arrayContaining(["content.js"]) }),
       )
       expect(chrome.tabs.sendMessage).toHaveBeenCalledTimes(2)
       expect(window.close).toHaveBeenCalled()
@@ -54,9 +63,9 @@ describe("Popup sendMessage", () => {
   })
 
   it("displays error when no active tab is found", async () => {
-    vi.mocked(chrome.tabs.query).mockResolvedValue([{} as chrome.tabs.Tab])
+    vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([{} as chrome.tabs.Tab])
 
-    render(<Popup />)
+    render(<App />)
     uploadFile()
 
     await waitFor(() => {

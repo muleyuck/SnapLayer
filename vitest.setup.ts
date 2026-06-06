@@ -2,7 +2,7 @@ import "@testing-library/jest-dom/vitest"
 import { beforeAll, beforeEach, vi } from "vitest"
 
 // Chrome API mock
-// Use beforeAll so this runs after WxtVitest's extensionApiMock setupFile (which also stubs chrome)
+// Use beforeAll to ensure chrome is stubbed before any test runs
 const chromeMock = {
   tabs: {
     query: vi.fn(),
