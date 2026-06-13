@@ -6,7 +6,8 @@
     "useIgnoreFile": true
   },
   "files": {
-    "ignoreUnknown": false
+    "ignoreUnknown": false,
+    "includes": ["**", "!public"]
   },
   "formatter": {
     "enabled": true,
@@ -34,7 +35,7 @@
           }
         }
       },
-      "recommended": true
+      "preset": "recommended"
     }
   },
   "javascript": {
