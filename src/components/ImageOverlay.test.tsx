@@ -251,5 +251,60 @@ describe("ImageOverlay", () => {
 
       expect(img).toHaveStyle({ opacity: "0.5" })
     })
+
+    it("should render opacity as an editable number input with the current value", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const opacityInput = screen.getByRole("spinbutton", { name: "Opacity (%)" })
+      expect(opacityInput).toHaveValue(100)
+    })
+
+    it("should display a % suffix next to the opacity input", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      expect(screen.getByText("%")).toBeInTheDocument()
+    })
+
+    it("should update opacity when the number input changes", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const opacityInput = screen.getByRole("spinbutton", { name: "Opacity (%)" })
+      fireEvent.change(opacityInput, { target: { value: "50" } })
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      expect(img).toHaveStyle({ opacity: "0.5" })
+      const opacitySlider = screen.getByRole("slider", { name: "Opacity" })
+      expect(opacitySlider).toHaveValue("50")
+    })
+
+    it("should clamp opacity number input values above 100 to 100", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const opacityInput = screen.getByRole("spinbutton", { name: "Opacity (%)" })
+      fireEvent.change(opacityInput, { target: { value: "150" } })
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      expect(img).toHaveStyle({ opacity: "1" })
+    })
+
+    it("should clamp opacity number input values below 0 to 0", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const opacityInput = screen.getByRole("spinbutton", { name: "Opacity (%)" })
+      fireEvent.change(opacityInput, { target: { value: "-20" } })
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      expect(img).toHaveStyle({ opacity: "0" })
+    })
+
+    it("should treat a non-numeric opacity input as 0", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const opacityInput = screen.getByRole("spinbutton", { name: "Opacity (%)" })
+      fireEvent.change(opacityInput, { target: { value: "" } })
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      expect(img).toHaveStyle({ opacity: "0" })
+    })
   })
 })

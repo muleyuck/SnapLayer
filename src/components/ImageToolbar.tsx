@@ -158,6 +158,20 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
           aria-label="Opacity"
           className="w-15 cursor-pointer"
         />
+        <input
+          type="number"
+          min={0}
+          max={100}
+          value={state.opacity}
+          onChange={(e) => {
+            const opacity = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0))
+            dispatch({ type: "SET_OPACITY", payload: opacity })
+          }}
+          title="Opacity (%)"
+          aria-label="Opacity (%)"
+          className={inputCva()}
+        />
+        <span className="text-natural-400 text-sm">%</span>
         {/* Delete button */}
         <button
           type="button"
