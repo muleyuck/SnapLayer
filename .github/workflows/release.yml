@@ -28,6 +28,7 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
@@ -61,13 +62,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
-      - name: Update version from tag
+      - name: Update version
         env:
-          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          VERSION: ${{ needs.release-please.outputs.version }}
         run: |
-          VERSION="${TAG_NAME#v}"
           jq --arg v "$VERSION" '.version = $v' package.json > package.json.tmp && mv package.json.tmp package.json
-          sed -i "s/version: \"[^\"]*\"/version: \"$VERSION\"/" wxt.config.ts
+          jq --arg v "$VERSION" '.version = $v' public/manifest.json > public/manifest.json.tmp && mv public/manifest.json.tmp public/manifest.json
       - name: install
         run: pnpm install --frozen-lockfile
       - name: build
