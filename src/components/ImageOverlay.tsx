@@ -58,7 +58,10 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
 
   const processedImageData = useMemo(() => processSvgImage(imageData), [imageData])
 
-  const { isDragging, isResizing, handleDragStart, handleResizeStart } = useDragAndResize({ state, dispatch })
+  const { isDragging, isResizing, snapGuides, handleDragStart, handleResizeStart } = useDragAndResize({
+    state,
+    dispatch,
+  })
 
   const fieldsetRef = useRef<HTMLFieldSetElement>(null)
 
@@ -142,6 +145,23 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
             onPointerDown={handleResizeStart(direction)}
           />
         ))}
+      {/* Snap guides */}
+      {isDragging && snapGuides.vertical !== null && (
+        <div
+          data-testid="snap-guide-vertical"
+          aria-hidden="true"
+          className="pointer-events-none fixed top-0 h-screen w-px bg-red-500/80"
+          style={{ left: snapGuides.vertical, zIndex: MAX_Z_INDEX }}
+        />
+      )}
+      {isDragging && snapGuides.horizontal !== null && (
+        <div
+          data-testid="snap-guide-horizontal"
+          aria-hidden="true"
+          className="pointer-events-none fixed left-0 h-px w-screen bg-red-500/80"
+          style={{ top: snapGuides.horizontal, zIndex: MAX_Z_INDEX }}
+        />
+      )}
     </fieldset>
   )
 }
