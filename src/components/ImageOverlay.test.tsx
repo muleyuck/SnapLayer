@@ -307,4 +307,46 @@ describe("ImageOverlay", () => {
       expect(img).toHaveStyle({ opacity: "0" })
     })
   })
+
+  describe("snap guides", () => {
+    it("should not render snap guide lines when not dragging", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      expect(screen.queryByTestId("snap-guide-vertical")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("snap-guide-horizontal")).not.toBeInTheDocument()
+    })
+
+    it("should render a vertical snap guide line when dragging near the left edge of the viewport", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      // initial position is x=100; dx = 53 - 150 = -97 -> newX = 3 (within 8px of 0)
+      fireEvent.pointerDown(img, { clientX: 150, clientY: 150 })
+      fireEvent.pointerMove(document, { clientX: 53, clientY: 150 })
+
+      expect(screen.queryByTestId("snap-guide-vertical")).toBeInTheDocument()
+    })
+
+    it("should render a horizontal snap guide line when dragging near the top edge of the viewport", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      // initial position is y=100; dy = 53 - 150 = -97 -> newY = 3 (within 8px of 0)
+      fireEvent.pointerDown(img, { clientX: 150, clientY: 150 })
+      fireEvent.pointerMove(document, { clientX: 150, clientY: 53 })
+
+      expect(screen.queryByTestId("snap-guide-horizontal")).toBeInTheDocument()
+    })
+
+    it("should not render snap guide lines when dragging outside the snap threshold", () => {
+      render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
+
+      const img = screen.getByRole("img", { name: "overlay" })
+      fireEvent.pointerDown(img, { clientX: 150, clientY: 150 })
+      fireEvent.pointerMove(document, { clientX: 200, clientY: 150 })
+
+      expect(screen.queryByTestId("snap-guide-vertical")).not.toBeInTheDocument()
+      expect(screen.queryByTestId("snap-guide-horizontal")).not.toBeInTheDocument()
+    })
+  })
 })

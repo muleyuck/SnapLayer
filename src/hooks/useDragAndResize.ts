@@ -17,6 +17,24 @@ export { RESIZE_DIRECTIONS }
 
 const NO_DRAGGABLE_ELEMENTS = ["INPUT", "BUTTON", "SPAN"]
 
+const SNAP_THRESHOLD = 8
+
+interface SnapGuides {
+  vertical: number | null
+  horizontal: number | null
+}
+
+const NO_SNAP_GUIDES: SnapGuides = { vertical: null, horizontal: null }
+
+function snapAxis(value: number, targets: number[], guides: number[]): { value: number; guide: number | null } {
+  for (let i = 0; i < targets.length; i++) {
+    if (Math.abs(value - targets[i]) <= SNAP_THRESHOLD) {
+      return { value: targets[i], guide: guides[i] }
+    }
+  }
+  return { value, guide: null }
+}
+
 interface UseDragAndResizeOptions {
   state: ImageOverlayState
   dispatch: React.ActionDispatch<[action: ImageOverlayAction]>
@@ -27,6 +45,7 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
 
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState<ResizeDirection | null>(null)
+  const [snapGuides, setSnapGuides] = useState<SnapGuides>(NO_SNAP_GUIDES)
 
   const dragStartRef = useRef<{ x: number; y: number; posX: number; posY: number } | null>(null)
   const resizeStartRef = useRef<{
@@ -71,9 +90,32 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
       if (isDragging && dragStartRef.current) {
         const dx = e.clientX - dragStartRef.current.x
         const dy = e.clientY - dragStartRef.current.y
+        const rawX = dragStartRef.current.posX + dx
+        const rawY = dragStartRef.current.posY + dy
+
+        const disableSnap = e.ctrlKey || e.metaKey
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+
+        const x = disableSnap
+          ? { value: rawX, guide: null }
+          : snapAxis(
+              rawX,
+              [0, viewportWidth - size.width, viewportWidth / 2 - size.width / 2],
+              [0, viewportWidth, viewportWidth / 2],
+            )
+        const y = disableSnap
+          ? { value: rawY, guide: null }
+          : snapAxis(
+              rawY,
+              [0, viewportHeight - size.height, viewportHeight / 2 - size.height / 2],
+              [0, viewportHeight, viewportHeight / 2],
+            )
+
+        setSnapGuides({ vertical: x.guide, horizontal: y.guide })
         dispatch({
           type: "SET_POSITION",
-          payload: { x: dragStartRef.current.posX + dx, y: dragStartRef.current.posY + dy },
+          payload: { x: x.value, y: y.value },
         })
       }
 
@@ -124,12 +166,13 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
       dispatch({ type: "SET_SIZE", payload: { width: Math.max(10, newWidth), height: Math.max(10, newHeight) } })
       dispatch({ type: "SET_POSITION", payload: { x: newX, y: newY } })
     },
-    [isDragging, isResizing, aspectRatio, lockAspectRatio, dispatch],
+    [isDragging, isResizing, size.width, size.height, aspectRatio, lockAspectRatio, dispatch],
   )
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false)
     setIsResizing(null)
+    setSnapGuides(NO_SNAP_GUIDES)
   }, [])
 
   useEffect(() => {
@@ -145,6 +188,7 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
   return {
     isDragging,
     isResizing,
+    snapGuides,
     handleDragStart,
     handleResizeStart,
   }
