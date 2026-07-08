@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/muleyuck/SnapLayer/compare/snap-layer-v0.4.0...snap-layer-v0.4.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* attach missing release asset by removing wxt.config.ts version update ([0532274](https://github.com/muleyuck/SnapLayer/commit/0532274fa82b4804311da9bf38affab177b98e5d))
+
 ## [0.4.0](https://github.com/muleyuck/SnapLayer/compare/snap-layer-v0.3.0...snap-layer-v0.4.0) (2026-07-08)
 
 
