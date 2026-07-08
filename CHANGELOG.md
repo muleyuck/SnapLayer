@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/muleyuck/SnapLayer/compare/snap-layer-v0.3.0...snap-layer-v0.4.0) (2026-07-08)
+
+
+### Features
+
+* add drag-time snap guides for image overlay ([#72](https://github.com/muleyuck/SnapLayer/issues/72)) ([cf3e917](https://github.com/muleyuck/SnapLayer/commit/cf3e917082688a81889ec632dd1bfe38779de339))
+* add editable percentage input for image opacity control ([#70](https://github.com/muleyuck/SnapLayer/issues/70)) ([dac2d53](https://github.com/muleyuck/SnapLayer/commit/dac2d5379183e144a6e902454cb9946ce3f5ab73))
+
 ## [0.3.0](https://github.com/muleyuck/SnapLayer/compare/v0.2.0...v0.3.0) (2026-03-28)
 
 This release contains only build system and tooling changes (WXT migration, Vite 8 upgrade) with no user-facing feature or bug fix changes.
