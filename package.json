@@ -10,7 +10,7 @@
     "format": "biome check --write *",
     "test": "vitest",
     "test:cov": "vitest --coverage",
-    "prepare": "husky"
+    "prepare": "prek install"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.6",
+    "@j178/prek": "^0.4.11",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -29,7 +30,6 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
-    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
     "typescript": "~5.9.3",
     "vite": "^8.1.5",
