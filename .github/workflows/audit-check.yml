@@ -8,36 +8,11 @@ on:
       - main
   workflow_dispatch:
 permissions: {}
-defaults:
-  run:
-    shell: bash
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   audit-check:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version:
-          - 26
-    timeout-minutes: 10
     permissions:
       contents: read
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v7
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 11.20.0
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v7
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Run pnpm audit
-        run: |
-          pnpm audit --audit-level=high
+    uses: muleyuck/github-actions/.github/workflows/audit-node-pnpm.yml@v1
