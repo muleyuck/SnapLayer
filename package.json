@@ -20,12 +20,12 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.8",
-    "@j178/prek": "^0.4.13",
+    "@biomejs/biome": "2.5.9",
+    "@j178/prek": "^0.4.14",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
-    "@types/chrome": "^0.2.5",
+    "@testing-library/user-event": "^14.6.5",
+    "@types/chrome": "^0.2.6",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
@@ -33,7 +33,7 @@
     "jsdom": "^28.1.0",
     "typescript": "~5.9.3",
     "vite": "^8.2.1",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "packageManager": "pnpm@11.20.0"
 }
