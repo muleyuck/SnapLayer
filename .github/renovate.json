@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "timezone": "Asia/Tokyo",
+  "schedule": ["on saturday"],
+  "assignees": ["muleyuck"],
+  "prConcurrentLimit": 10,
+  "semanticCommits": "enabled",
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "dependencyDashboard": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["on saturday"]
+  },
+  "packageRules": [
+    { "matchManagers": ["github-actions"], "groupName": "github-actions dependencies" },
+    { "matchManagers": ["github-actions"], "matchUpdateTypes": ["patch", "minor", "digest"], "automerge": true },
+
+    { "matchManagers": ["npm"], "matchUpdateTypes": ["major"], "enabled": false },
+
+    { "matchManagers": ["npm"], "matchPackageNames": ["tailwindcss", "@tailwindcss/vite"], "groupName": "tailwind" },
+    { "matchManagers": ["npm"], "matchPackageNames": ["vite", "@vitejs/plugin-react"], "groupName": "build-tooling" },
+    { "matchManagers": ["npm"], "matchPackageNames": ["vitest", "jsdom", "@testing-library/jest-dom", "@testing-library/react", "@testing-library/user-event"], "groupName": "test-tooling" },
+    { "matchManagers": ["npm"], "matchPackageNames": ["@biomejs/biome", "@j178/prek"], "groupName": "lint-format" },
+
+    { "matchManagers": ["npm"], "matchDepTypes": ["devDependencies"], "semanticCommitScope": "deps-dev" },
+    { "matchManagers": ["npm"], "matchDepTypes": ["devDependencies"], "matchUpdateTypes": ["patch", "minor"], "automerge": true },
+
+    { "matchManagers": ["npm"], "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"], "groupName": "react", "automerge": false },
+
+    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["pnpm"], "groupName": "pnpm toolchain", "automerge": false },
+    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["pnpm"], "matchUpdateTypes": ["major"], "enabled": false },
+
+    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["node", "@types/node"], "groupName": "node toolchain", "automerge": false },
+    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["node", "@types/node"], "matchUpdateTypes": ["major"], "enabled": false }
+  ]
+}
