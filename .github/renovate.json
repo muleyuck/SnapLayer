@@ -32,6 +32,8 @@
     { "matchManagers": ["mise", "npm"], "matchPackageNames": ["pnpm"], "matchUpdateTypes": ["major"], "enabled": false },
 
     { "matchManagers": ["mise", "npm"], "matchPackageNames": ["node", "@types/node"], "groupName": "node toolchain", "automerge": false },
-    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["node", "@types/node"], "matchUpdateTypes": ["major"], "enabled": false }
+    { "matchManagers": ["mise", "npm"], "matchPackageNames": ["node", "@types/node"], "matchUpdateTypes": ["major"], "enabled": false },
+
+    { "matchUpdateTypes": ["lockFileMaintenance"], "automerge": false }
   ]
 }
