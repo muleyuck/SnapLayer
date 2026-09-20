@@ -2,7 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "timezone": "Asia/Tokyo",
   "schedule": ["on saturday"],
-  "assignees": ["muleyuck"],
+  "reviewers": ["muleyuck"],
   "prConcurrentLimit": 10,
   "semanticCommits": "enabled",
   "automergeType": "pr",
