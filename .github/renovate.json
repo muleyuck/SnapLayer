@@ -1,6 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["security:minimumReleaseAgeNpm"],
+  "minimumReleaseAge": "3 days",
   "internalChecksFilter": "strict",
   "timezone": "Asia/Tokyo",
   "schedule": ["on saturday"],
