@@ -25,15 +25,7 @@
         "noUnusedImports": "warn"
       },
       "nursery": {
-        "useSortedClasses": {
-          "level": "warn",
-          "fix": "safe",
-          "options": {
-            "attributes": [
-              "className"
-            ]
-          }
-        }
+        "useTailwindSortedClasses": "warn"
       },
       "preset": "recommended"
     }
@@ -53,6 +45,11 @@
     }
   },
   "json": {
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "markdown": {
     "formatter": {
       "enabled": false
     }
