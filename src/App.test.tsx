@@ -22,6 +22,22 @@ describe("Popup sendMessage", () => {
     fireEvent.change(input)
   }
 
+  it("sends uploaded HTML as an HTML layer request", async () => {
+    vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
+      { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
+    ])
+    vi.mocked(chrome.tabs.sendMessage).mockResolvedValue(undefined)
+    render(<App />)
+    const html = "<!doctype html><h1>Mock</h1>"
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement
+    Object.defineProperty(input, "files", { value: [new File([html], "mock.html", { type: "text/html" })] })
+    fireEvent.change(input)
+    await waitFor(() => {
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, { type: "ADD_HTML", html })
+      expect(window.close).toHaveBeenCalled()
+    })
+  })
+
   it("sends message directly when overlay is already injected (no executeScript)", async () => {
     vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
       { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
