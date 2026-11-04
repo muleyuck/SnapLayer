@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest"
+import { MessageChannel } from "node:worker_threads"
 import { beforeAll, beforeEach, vi } from "vitest"
 
 // Chrome API mock
@@ -12,6 +13,7 @@ const chromeMock = {
     executeScript: vi.fn(),
   },
   runtime: {
+    getURL: vi.fn((path: string) => `chrome-extension://snaplayer-test/${path}`),
     onMessage: {
       addListener: vi.fn(),
       removeListener: vi.fn(),
@@ -21,6 +23,7 @@ const chromeMock = {
 
 beforeAll(() => {
   vi.stubGlobal("chrome", chromeMock)
+  vi.stubGlobal("MessageChannel", MessageChannel)
 })
 
 // Mock Image constructor (jsdom doesn't fire onload for data URLs)

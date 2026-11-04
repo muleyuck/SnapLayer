@@ -11,9 +11,10 @@ const fileToDataUrl = (file: File | Blob): Promise<string> => {
 
 interface Props {
   onImage: (dataUrl: string) => Promise<void>
+  onHtml: (html: string) => Promise<void>
 }
 
-export default function ImageUploader({ onImage }: Props) {
+export default function ImageUploader({ onImage, onHtml }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -21,10 +22,19 @@ export default function ImageUploader({ onImage }: Props) {
     const file = e.target.files?.[0]
     try {
       if (!file) {
-        throw new Error("Cant't get selected image")
+        throw new Error("Can't get selected file")
       }
-      const dataUrl = await fileToDataUrl(file)
-      await onImage(dataUrl)
+      if (file.type === "text/html" || /\.html?$/i.test(file.name)) {
+        const html = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsText(file)
+        })
+        await onHtml(html)
+      } else {
+        await onImage(await fileToDataUrl(file))
+      }
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
@@ -97,17 +107,19 @@ export default function ImageUploader({ onImage }: Props) {
     <div className="space-y-1">
       <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-gray-400 border-dashed bg-gray-50 p-8 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:bg-gray-700 dark:hover:border-blue-300/60 dark:hover:bg-blue-500/20">
         <h2 className="text-center text-sm">
-          <p className="font-semibold">Paste or Select image</p>
-          <p className="text-gray-500 dark:text-gray-300">(jpeg, png and svg.)</p>
+          <p className="font-semibold">Select image or HTML</p>
+          <p className="text-gray-500 dark:text-gray-300">JPEG, PNG, SVG, HTML</p>
+          <p className="text-gray-500 dark:text-gray-300">Paste images or SVG</p>
         </h2>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".jpeg,.png,.svg,image/jpeg,image/png,image/svg+xml"
+          accept=".jpeg,.png,.svg,.html,.htm,image/jpeg,image/png,image/svg+xml,text/html"
           onChange={handleFileChange}
           className="hidden"
         />
       </label>
+      <p className="text-gray-500 text-xs dark:text-gray-300">HTML can load external images, styles and scripts.</p>
       {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>
   )

@@ -9,6 +9,39 @@ describe("ImageOverlay", () => {
     mockOnDelete.mockReset()
   })
 
+  describe("HTML layers", () => {
+    it("changes the viewport width without scaling or reloading the HTML", () => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      const frame = screen.getByTitle("HTML preview")
+      expect(frame).toHaveStyle({ width: "640px", height: "480px" })
+      fireEvent.change(screen.getByRole("spinbutton", { name: "Width (px)" }), { target: { value: "375" } })
+      expect(screen.getByTitle("HTML preview")).toBe(frame)
+      expect(frame).toHaveStyle({ width: "375px", height: "480px" })
+      expect(screen.queryByRole("img", { name: "overlay" })).not.toBeInTheDocument()
+    })
+
+    it("keeps the HTML mounted when hidden and applies overlay opacity", () => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      const frame = screen.getByTitle("HTML preview")
+      fireEvent.change(screen.getByRole("spinbutton", { name: "Opacity (%)" }), { target: { value: "45" } })
+      expect(frame).toHaveStyle({ opacity: "0.45", pointerEvents: "auto" })
+      fireEvent.click(screen.getByRole("button", { name: "Hide layer" }))
+      expect(screen.getByTitle("HTML preview")).toBe(frame)
+      expect(frame).not.toBeVisible()
+      fireEvent.click(screen.getByRole("button", { name: "Show layer" }))
+      expect(frame).toBeVisible()
+    })
+
+    it("keeps resize pointer events on the comparison page while allowing HTML interaction afterward", () => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      const frame = screen.getByTitle("HTML preview")
+      fireEvent.pointerDown(screen.getByRole("button", { name: "Resize from right" }))
+      expect(frame).toHaveStyle({ pointerEvents: "none" })
+      fireEvent.pointerUp(document)
+      expect(frame).toHaveStyle({ pointerEvents: "auto" })
+    })
+  })
+
   describe("rendering", () => {
     it("should render the image with imageData", () => {
       const imageData = "data:image/png;base64,iVBORw0KGgo="
@@ -29,7 +62,7 @@ describe("ImageOverlay", () => {
     it("should render toolbar", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      expect(screen.getByRole("toolbar", { name: "Image controls" })).toBeInTheDocument()
+      expect(screen.getByRole("toolbar", { name: "Layer controls" })).toBeInTheDocument()
     })
   })
 
@@ -52,14 +85,14 @@ describe("ImageOverlay", () => {
     it("should have cursor-move class by default", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
       expect(fieldset).toHaveClass("cursor-move")
     })
 
     it("should change to cursor-grabbing when dragging", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
       const img = screen.getByRole("img", { name: "overlay" })
 
       fireEvent.pointerDown(img, { clientX: 100, clientY: 100 })
@@ -107,7 +140,7 @@ describe("ImageOverlay", () => {
     it("should show resize handles on hover", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
       const handles = screen.getAllByRole("button", { name: /Resize from/i })
 
       handles.forEach((handle) => {
@@ -124,7 +157,7 @@ describe("ImageOverlay", () => {
     it("should hide resize handles on pointer leave", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
       const handles = screen.getAllByRole("button", { name: /Resize from/i })
 
       fireEvent.pointerEnter(fieldset)
@@ -145,20 +178,20 @@ describe("ImageOverlay", () => {
     it("should hide image when visibility is toggled off", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const toggleButton = screen.getByRole("button", { name: "Hide image" })
+      const toggleButton = screen.getByRole("button", { name: "Hide layer" })
       fireEvent.click(toggleButton)
 
       expect(screen.queryByRole("img", { name: "overlay" })).not.toBeInTheDocument()
-      expect(screen.getByRole("button", { name: "Show image" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "Show layer" })).toBeInTheDocument()
     })
 
     it("should show image when visibility is toggled back on", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
 
-      const hideButton = screen.getByRole("button", { name: "Hide image" })
+      const hideButton = screen.getByRole("button", { name: "Hide layer" })
       fireEvent.click(hideButton)
 
-      const showButton = screen.getByRole("button", { name: "Show image" })
+      const showButton = screen.getByRole("button", { name: "Show layer" })
       fireEvent.click(showButton)
 
       expect(screen.getByRole("img", { name: "overlay" })).toBeInTheDocument()
@@ -196,7 +229,7 @@ describe("ImageOverlay", () => {
   describe("Arrow key movement", () => {
     it("should move by 1px in the correct axis per direction", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
 
       const initialTop = Number.parseFloat(fieldset.style.top)
       fireEvent.keyDown(fieldset, { key: "ArrowUp" })
@@ -213,7 +246,7 @@ describe("ImageOverlay", () => {
 
     it("should move 10px when Shift is held", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
 
       const initialTop = Number.parseFloat(fieldset.style.top)
       fireEvent.keyDown(fieldset, { key: "ArrowUp", shiftKey: true })
@@ -230,7 +263,7 @@ describe("ImageOverlay", () => {
 
     it("should not move when Arrow key is pressed inside an input", () => {
       render(<ImageOverlay imageData="data:image/png;base64,test" onDelete={mockOnDelete} />)
-      const fieldset = screen.getByRole("group", { name: "Draggable image overlay" })
+      const fieldset = screen.getByRole("group", { name: "Draggable layer overlay" })
       fireEvent.pointerEnter(fieldset)
       const initialLeft = Number.parseFloat(fieldset.style.left)
       const widthInput = screen.getByRole("spinbutton", { name: /width/i })

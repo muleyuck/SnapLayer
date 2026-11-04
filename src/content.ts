@@ -11,7 +11,7 @@ const handleDeleteImage = () => {
   root = null
 }
 
-const addImage = (imageData: string) => {
+const addLayer = (message: SnapLayerMessage) => {
   if (!root) {
     const snapLayerHost = document.createElement("div")
     snapLayerHost.id = "snapLayer-host"
@@ -29,11 +29,14 @@ const addImage = (imageData: string) => {
 
     root = createRoot(snapLayerRoot)
   }
-  root.render(createElement(ImageOverlay, { imageData, onDelete: handleDeleteImage }))
+  const source = message.type === "ADD_IMAGE" ? { imageData: message.imageData } : { html: message.html }
+  root.render(createElement(ImageOverlay, { ...source, key: message.type, onDelete: handleDeleteImage }))
 }
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === "ADD_IMAGE") {
-    addImage((message as SnapLayerMessage).imageData)
+    addLayer(message as SnapLayerMessage)
+  } else if (message?.type === "ADD_HTML" && typeof message.html === "string") {
+    addLayer(message as SnapLayerMessage)
   }
 })

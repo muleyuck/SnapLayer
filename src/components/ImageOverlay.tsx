@@ -1,5 +1,6 @@
 import { cva } from "class-variance-authority"
 import { useEffect, useMemo, useReducer, useRef, useState } from "react"
+import { HtmlPreview } from "@/components/HtmlPreview"
 import { ImageToolbar } from "@/components/ImageToolbar"
 import { IMAGE_OVELAY_INITIAL_STATE, imageOverlayReducer } from "@/hooks/imageOverlayReducer"
 import { RESIZE_DIRECTIONS, useDragAndResize } from "@/hooks/useDragAndResize"
@@ -17,10 +18,9 @@ const ARROW_KEY_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
   ArrowRight: { dx: 1, dy: 0 },
 }
 
-interface ImageOverlayProps {
-  imageData: string | undefined
+type ImageOverlayProps = {
   onDelete: () => void
-}
+} & ({ imageData: string | undefined; html?: never } | { html: string; imageData?: never })
 
 const fieldsetCva = cva("fixed m-0 box-border select-none border-none p-0 focus:outline-none", {
   variants: {
@@ -52,8 +52,11 @@ const resizeHandleCva = cva(
   },
 )
 
-export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
-  const [state, dispatch] = useReducer(imageOverlayReducer, IMAGE_OVELAY_INITIAL_STATE)
+export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
+  const [state, dispatch] = useReducer(imageOverlayReducer, {
+    ...IMAGE_OVELAY_INITIAL_STATE,
+    ...(html !== undefined && { size: { width: 640, height: 480 }, aspectRatio: 4 / 3, lockAspectRatio: false }),
+  })
   const [isHovered, setIsHovered] = useState(false)
 
   const processedImageData = useMemo(() => processSvgImage(imageData), [imageData])
@@ -82,6 +85,7 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
 
   // Set initial size based on image dimensions
   useEffect(() => {
+    if (html !== undefined) return
     const img = new Image()
     img.onload = () => {
       dispatch({
@@ -91,14 +95,14 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
       dispatch({ type: "SET_ASPECT_RATIO", payload: img.naturalWidth / img.naturalHeight })
     }
     img.src = imageData ?? ""
-  }, [imageData])
+  }, [imageData, html])
 
   const showHandles = isHovered || isDragging || !!isResizing
 
   return (
     <fieldset
       ref={fieldsetRef}
-      aria-label="Draggable image overlay"
+      aria-label="Draggable layer overlay"
       className={fieldsetCva({ dragging: isDragging })}
       style={{
         left: state.position.x,
@@ -118,7 +122,7 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
       onPointerLeave={() => setIsHovered(false)}
     >
       {/* Image */}
-      {state.isVisibleImage && (
+      {state.isVisibleImage && html === undefined && (
         <img
           src={processedImageData}
           alt="overlay"
@@ -130,6 +134,16 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
             objectFit: "fill",
           }}
           draggable={false}
+        />
+      )}
+      {html !== undefined && (
+        <HtmlPreview
+          html={html}
+          width={state.size.width}
+          height={state.size.height}
+          opacity={state.opacity}
+          visible={state.isVisibleImage}
+          interactive={!isDragging && !isResizing}
         />
       )}
       {/* Toolbar */}

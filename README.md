@@ -8,7 +8,7 @@
 ![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)
 [![Release](https://img.shields.io/github/release/muleyuck/SnapLayer.svg)](https://github.com/muleyuck/SnapLayer/releases/latest)
 
-🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images on any webpage.  
+🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images and HTML mockups on any webpage.
 Perfect for designers comparing mockups, developers checking pixel-perfect implementations, or anyone who needs to visually compare images against web content. No more switching tabs — compare side by side in real time.
 
 ## Screenshots
@@ -23,6 +23,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 - **Opacity Control** - Adjust transparency for easy comparison
 - **Visibility Toggle** - Quickly show/hide the overlay
 - **JPEG/PNG & SVG Support** - Works with common image formats
+- **HTML Mockups** - Load a single HTML file with CSS, images and rendering scripts; change its viewport dimensions and scroll within the overlay
 - **Style Isolation** - Shadow DOM ensures no conflicts with host page styles
 - **Keyboard Shortcuts** - Move with arrow keys; Shift+arrow for 10 px jumps; Backspace to delete
 - **Clipboard Paste** - Paste images with Cmd/Ctrl+V, including SVG as plain text
@@ -50,8 +51,8 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 ## Usage
 
 1. Click the SnapLayer extension icon in Chrome toolbar
-2. Select a JPEG, PNG or SVG image file from your computer
-3. The image appears as an overlay on the current page
+2. Select a JPEG, PNG, SVG or HTML file from your computer
+3. The file appears as an overlay on the current page
 4. **Move**: Drag the image to reposition
 5. **Resize**: Drag the corner or edge handles
 6. **Adjust**: Use the toolbar to change opacity, toggle visibility, or delete
@@ -66,6 +67,14 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 | Lock Icon | Toggle aspect ratio lock |
 | Eye Icon | Toggle image visibility |
 | Trash Icon | Remove the overlay |
+
+### HTML mockups
+
+Select an `.html` or `.htm` file using the same file picker. HTML starts at a 640 × 480 viewport with the aspect ratio unlocked. Width and height change the actual viewport, so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup, and drag the toolbar background to move the overlay. Hiding the layer keeps its document mounted.
+
+SnapLayer reads the file locally. The mockup can execute inline scripts and load HTTPS styles, scripts, images and fonts; those requests go to the referenced servers. Relative companion files are not imported. External frames, authentication and persistent storage are outside the supported preview use case. Clipboard paste continues to support images and SVG text.
+
+Uploaded HTML runs inside a manifest sandbox with an opaque origin, without extension APIs or direct access to the comparison page. The extension uses only `activeTab` and `scripting`; HTML previews do not require tab capture or additional host permissions. Resource loading still follows the remote server's browser access restrictions.
 
 ## Keyboard Shortcuts
 

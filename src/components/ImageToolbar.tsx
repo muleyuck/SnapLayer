@@ -50,7 +50,7 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
   return (
     <div
       role="toolbar"
-      aria-label="Image controls"
+      aria-label="Layer controls"
       className="absolute top-2 left-2 flex h-7 items-center whitespace-nowrap rounded-md bg-black/85 px-2.5 font-sans text-white text-xs transition-all duration-150"
     >
       {/* Toggle button */}
@@ -138,8 +138,8 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
         <button
           type="button"
           onClick={() => dispatch({ type: "TOGGLE_VISIBILITY" })}
-          title={state.isVisibleImage ? "Hide image" : "Show image"}
-          aria-label={state.isVisibleImage ? "Hide image" : "Show image"}
+          title={state.isVisibleImage ? "Hide layer" : "Show layer"}
+          aria-label={state.isVisibleImage ? "Hide layer" : "Show layer"}
           className={buttonCva({ color: "natural", rightSpace: false })}
         >
           {state.isVisibleImage ? <EyeIcon /> : <EyeSlashIcon />}
