@@ -6,6 +6,7 @@ import {
   ExpandIcon,
   EyeIcon,
   EyeSlashIcon,
+  GripIcon,
   LockIcon,
   LockSlashIcon,
   SettingsIcon,
@@ -22,8 +23,12 @@ const toolbarCva = cva("flex items-center gap-1.5 overflow-hidden transition-all
   },
 })
 const inputCva = cva("w-16 rounded border border-natural-600 bg-gray-800 px-1.5 py-0.5")
-const buttonCva = cva("cursor-pointer rounded p-0.5 text-sm", {
+const buttonCva = cva("rounded p-0.5 text-sm", {
   variants: {
+    cursor: {
+      pointer: "cursor-pointer",
+      grab: "cursor-grab active:cursor-grabbing",
+    },
     color: {
       red: "bg-red-600 hover:bg-gray-700",
       natural: "hover:bg-gray-700",
@@ -33,15 +38,17 @@ const buttonCva = cva("cursor-pointer rounded p-0.5 text-sm", {
       false: "",
     },
   },
+  defaultVariants: { cursor: "pointer" },
 })
 
 interface ImageToolbarProps {
   state: ImageOverlayState
   dispatch: React.ActionDispatch<[action: ImageOverlayAction]>
   onDelete: () => void
+  onMoveStart: React.PointerEventHandler<HTMLButtonElement>
 }
 
-export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) => {
+export const ImageToolbar = ({ state, dispatch, onDelete, onMoveStart }: ImageToolbarProps) => {
   const [isToolbarExpand, setIsToolbarExpand] = useState(true)
   const [preExpandSnapshot, setPreExpandSnapshot] = useState<{
     position: { x: number; y: number }
@@ -53,6 +60,15 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
       aria-label="Layer controls"
       className="absolute top-2 left-2 flex h-7 items-center whitespace-nowrap rounded-md bg-black/85 px-2.5 font-sans text-white text-xs transition-all duration-150"
     >
+      <button
+        type="button"
+        aria-label="Move layer"
+        title="Drag to move"
+        className={buttonCva({ color: "natural", cursor: "grab" })}
+        onPointerDown={onMoveStart}
+      >
+        <GripIcon />
+      </button>
       {/* Toggle button */}
       <button
         type="button"
@@ -101,7 +117,7 @@ export const ImageToolbar = ({ state, dispatch, onDelete }: ImageToolbarProps) =
         <button
           type="button"
           onClick={() => {
-            if (state.lockAspectRatio) {
+            if (!state.lockAspectRatio) {
               dispatch({ type: "SET_ASPECT_RATIO", payload: state.size.width / state.size.height })
             }
             dispatch({ type: "TOGGLE_LOCK_ASPECT_RATIO" })
