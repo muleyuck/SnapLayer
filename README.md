@@ -53,7 +53,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 1. Click the SnapLayer extension icon in Chrome toolbar
 2. Select a JPEG, PNG, SVG or HTML file from your computer
 3. The file appears as an overlay on the current page
-4. **Move**: Drag the image to reposition
+4. **Move**: Drag the grip at the left of the toolbar to reposition any layer; images can also be dragged directly
 5. **Resize**: Drag the corner or edge handles
 6. **Adjust**: Use the toolbar to change opacity, toggle visibility, or delete
 
@@ -61,6 +61,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 | Control | Description |
 |---------|-------------|
+| Grip Icon | Drag to move the layer (images, SVG and HTML) |
 | Width / Height | Enter exact pixel dimensions |
 | Expand Icon | Fit to viewport width (click again to restore) |
 | Opacity Slider | Adjust image transparency (0-100%) |
@@ -70,7 +71,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 ### HTML mockups
 
-Select an `.html` or `.htm` file using the same file picker. HTML starts at a 640 × 480 viewport with the aspect ratio unlocked. Width and height change the actual viewport, so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup, and drag the toolbar background to move the overlay. Hiding the layer keeps its document mounted.
+Select an `.html` or `.htm` file using the same file picker. HTML starts at a 640 × 480 viewport with the aspect ratio unlocked. Width and height change the actual viewport, so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup, and drag the toolbar grip to move the overlay. The grip remains available when the toolbar is collapsed. Hiding the layer keeps its document mounted.
 
 SnapLayer reads the file locally. The mockup can execute inline scripts and load HTTPS styles, scripts, images and fonts; those requests go to the referenced servers. Relative companion files are not imported. External frames, authentication and persistent storage are outside the supported preview use case. Clipboard paste continues to support images and SVG text.
 

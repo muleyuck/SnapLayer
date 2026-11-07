@@ -147,7 +147,16 @@ export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
         />
       )}
       {/* Toolbar */}
-      <ImageToolbar state={state} dispatch={dispatch} onDelete={onDelete} />
+      <ImageToolbar
+        state={state}
+        dispatch={dispatch}
+        onDelete={onDelete}
+        onMoveStart={(event) => {
+          event.stopPropagation()
+          handleDragStart(event, true)
+          fieldsetRef.current?.focus()
+        }}
+      />
       {/* Resize handles */}
       {state.isVisibleImage &&
         RESIZE_DIRECTIONS.map((direction) => (

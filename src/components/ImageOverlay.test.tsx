@@ -9,7 +9,77 @@ describe("ImageOverlay", () => {
     mockOnDelete.mockReset()
   })
 
+  describe("shared move handle", () => {
+    it.each([
+      { name: "PNG", source: { imageData: "data:image/png;base64,test" } },
+      {
+        name: "SVG",
+        source: { imageData: `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}` },
+      },
+      { name: "HTML", source: { html: "<h1>Mock</h1>" } },
+    ])("moves a $name layer with the same toolbar handle", ({ source }) => {
+      render(<ImageOverlay {...source} onDelete={mockOnDelete} />)
+      const layer = screen.getByRole("group", { name: "Draggable layer overlay" })
+      const handle = screen.getByRole("button", { name: "Move layer" })
+      fireEvent.pointerDown(handle, { clientX: 140, clientY: 160 })
+      expect(layer).toHaveClass("cursor-grabbing")
+      fireEvent.pointerMove(document, { clientX: 217, clientY: 223, ctrlKey: true })
+      expect(layer).toHaveStyle({ left: "177px", top: "163px" })
+      fireEvent.pointerUp(document)
+      expect(layer).not.toHaveClass("cursor-grabbing")
+      fireEvent.pointerMove(document, { clientX: 260, clientY: 280 })
+      expect(layer).toHaveStyle({ left: "177px", top: "163px" })
+    })
+
+    it("keeps the HTML document mounted and restores interaction after a move", () => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      const frame = screen.getByTitle("HTML preview")
+      fireEvent.pointerDown(screen.getByRole("button", { name: "Move layer" }), { clientX: 140, clientY: 160 })
+      expect(frame).toHaveStyle({ pointerEvents: "none" })
+      fireEvent.pointerMove(document, { clientX: 217, clientY: 223, ctrlKey: true })
+      expect(screen.getByTitle("HTML preview")).toBe(frame)
+      fireEvent.pointerUp(document)
+      expect(frame).toHaveStyle({ pointerEvents: "auto" })
+    })
+
+    it("keeps the move handle available when the toolbar is collapsed", () => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      fireEvent.click(screen.getByRole("button", { name: "Collapse toolbar" }))
+      fireEvent.pointerDown(screen.getByRole("button", { name: "Move layer" }), { clientX: 140, clientY: 160 })
+      fireEvent.pointerMove(document, { clientX: 217, clientY: 223, ctrlKey: true })
+      expect(screen.getByRole("group", { name: "Draggable layer overlay" })).toHaveStyle({
+        left: "177px",
+        top: "163px",
+      })
+      fireEvent.pointerUp(document)
+    })
+  })
+
   describe("HTML layers", () => {
+    it.each(["Move layer", "Resize from right"])("restores HTML interaction when %s is cancelled", (control) => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      const frame = screen.getByTitle("HTML preview")
+      const layer = screen.getByRole("group", { name: "Draggable layer overlay" })
+      fireEvent.pointerDown(screen.getByRole("button", { name: control }), { clientX: 140, clientY: 160 })
+      expect(frame).toHaveStyle({ pointerEvents: "none" })
+      fireEvent.pointerCancel(document)
+      expect(frame).toHaveStyle({ pointerEvents: "auto" })
+      expect(layer).not.toHaveClass("cursor-grabbing")
+      fireEvent.pointerMove(document, { clientX: 217, clientY: 223, ctrlKey: true })
+      expect(layer).toHaveStyle({ left: "100px", top: "100px", width: "640px", height: "480px" })
+    })
+
+    it.each([
+      { dimension: "Width (px)", value: "400", width: "400px", height: "600px" },
+      { dimension: "Height (px)", value: "600", width: "400px", height: "600px" },
+    ])("locks the current HTML proportions when changing $dimension", ({ dimension, value, width, height }) => {
+      render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
+      fireEvent.change(screen.getByRole("spinbutton", { name: "Width (px)" }), { target: { value: "320" } })
+      fireEvent.click(screen.getByRole("button", { name: "Lock aspect ratio" }))
+      fireEvent.change(screen.getByRole("spinbutton", { name: dimension }), { target: { value } })
+      expect(screen.getByTitle("HTML preview")).toHaveStyle({ width, height })
+    })
+
     it("changes the viewport width without scaling or reloading the HTML", () => {
       render(<ImageOverlay html="<h1>Mock</h1>" onDelete={mockOnDelete} />)
       const frame = screen.getByTitle("HTML preview")

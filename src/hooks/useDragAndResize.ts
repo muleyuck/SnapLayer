@@ -57,13 +57,13 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
     posY: number
   } | null>(null)
 
-  const handleDragStart = (e: React.PointerEvent) => {
+  const handleDragStart = (e: React.PointerEvent, isDragHandle = false) => {
     // Blur active input when clicking outside of it for natural focus behavior
     if (!(e.target instanceof HTMLInputElement)) {
       ;(document.activeElement as HTMLElement)?.blur?.()
     }
     const target = e.target as HTMLElement
-    if (NO_DRAGGABLE_ELEMENTS.includes(target.tagName)) {
+    if (!isDragHandle && NO_DRAGGABLE_ELEMENTS.includes(target.tagName)) {
       return
     }
     setIsDragging(true)
@@ -169,7 +169,7 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
     [isDragging, isResizing, size.width, size.height, aspectRatio, lockAspectRatio, dispatch],
   )
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerEnd = useCallback(() => {
     setIsDragging(false)
     setIsResizing(null)
     setSnapGuides(NO_SNAP_GUIDES)
@@ -177,13 +177,15 @@ export function useDragAndResize({ state, dispatch }: UseDragAndResizeOptions) {
 
   useEffect(() => {
     document.addEventListener("pointermove", handlePointerMove)
-    document.addEventListener("pointerup", handlePointerUp)
+    document.addEventListener("pointerup", handlePointerEnd)
+    document.addEventListener("pointercancel", handlePointerEnd)
 
     return () => {
       document.removeEventListener("pointermove", handlePointerMove)
-      document.removeEventListener("pointerup", handlePointerUp)
+      document.removeEventListener("pointerup", handlePointerEnd)
+      document.removeEventListener("pointercancel", handlePointerEnd)
     }
-  }, [handlePointerMove, handlePointerUp])
+  }, [handlePointerMove, handlePointerEnd])
 
   return {
     isDragging,
