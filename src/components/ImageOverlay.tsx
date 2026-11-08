@@ -45,6 +45,10 @@ const moveEdgeCva = cva(
         true: "opacity-100",
         false: "opacity-0",
       },
+      // Hidden edges sit outside the layer, so they let page clicks through while hover can reveal them.
+      passThrough: {
+        true: "pointer-events-none",
+      },
     },
   },
 )
@@ -177,7 +181,10 @@ export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
             type="button"
             aria-label={`Move from ${edge} edge`}
             title="Drag edge to move"
-            className={moveEdgeCva({ edge, visible: showHandles })}
+            // Pointer-only control; the fieldset already moves the layer with the arrow keys.
+            tabIndex={-1}
+            // Chrome reports no hover while the pointer is over the HTML frame, so HTML layers keep their edges grabbable.
+            className={moveEdgeCva({ edge, visible: showHandles, passThrough: !showHandles && html === undefined })}
             onPointerDown={handleMoveStart}
           />
         ))}
