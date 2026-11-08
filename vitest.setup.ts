@@ -13,6 +13,7 @@ const chromeMock = {
   },
   runtime: {
     getURL: vi.fn((path: string) => `chrome-extension://snaplayer-test/${path}`),
+    sendMessage: vi.fn(() => new Promise(() => {})),
     onMessage: {
       addListener: vi.fn(),
       removeListener: vi.fn(),

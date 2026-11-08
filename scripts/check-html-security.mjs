@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
 import { createHash, randomUUID } from "node:crypto"
-import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync } from "node:fs"
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { homedir, tmpdir } from "node:os"
 import { join, resolve } from "node:path"
@@ -165,6 +165,11 @@ async function main() {
     environments: { client: { build: { outDir: extensionDir } }, content: { build: { outDir: extensionDir } } },
   })
   await builder.buildApp()
+  // Test build only: lets the driver inject content.js the way the popup does after a user gesture.
+  const manifestPath = join(extensionDir, "manifest.json")
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"))
+  manifest.host_permissions = ["http://127.0.0.1/*"]
+  writeFileSync(manifestPath, JSON.stringify(manifest))
   await new Promise((resolve, reject) => {
     server.once("error", reject)
     server.listen(0, "127.0.0.1", resolve)
@@ -175,7 +180,8 @@ async function main() {
     .digest("hex")
     .slice(0, 32)
     .replace(/[0-9a-f]/g, (character) => String.fromCharCode(97 + Number.parseInt(character, 16)))
-  const previewUrl = `chrome-extension://${extensionId}/html-preview.html`
+  const extensionOrigin = `chrome-extension://${extensionId}`
+  let previewUrl
   browser = spawn(findBrowser(), [
     "--headless=new",
     "--no-first-run",
@@ -224,6 +230,17 @@ async function main() {
     sessionId,
   )
   const run = (expression) => evaluate(sessionId, expression, executionContextId)
+  const extensionPage = await connection.send("Target.createTarget", { url: `${extensionOrigin}/index.html` })
+  const { sessionId: extensionPageSession } = await connection.send("Target.attachToTarget", {
+    targetId: extensionPage.targetId,
+    flatten: true,
+  })
+  await connection.send("Runtime.enable", {}, extensionPageSession)
+  await until(
+    () =>
+      evaluate(extensionPageSession, 'document.readyState === "complete" && typeof chrome.runtime?.id === "string"'),
+    "extension page",
+  )
   await run(`globalThis.results = []; addEventListener("message", event => {
     if (event.isTrusted && event.data?.securityRun === ${JSON.stringify(runId)}) results.push(event.data);
   }); document.cookie = "snaplayer_security=page-only";`)
@@ -232,8 +249,10 @@ async function main() {
     await run('document.getElementById("preview")?.remove()')
     await until(async () => {
       const { targetInfos } = await connection.send("Target.getTargets")
-      return !targetInfos.some((target) => target.type === "iframe" && target.url === previewUrl)
+      return !targetInfos.some((target) => target.type === "iframe" && target.url.startsWith(extensionOrigin))
     }, "previous preview removal")
+    requestId = randomUUID()
+    previewUrl = `${extensionOrigin}/html-preview.html?request=${requestId}`
     await run(`(() => {
       globalThis.results = [];
       const frame = document.createElement("iframe");
@@ -251,10 +270,13 @@ async function main() {
     return attached.sessionId
   }
 
+  let requestId
   async function render(html) {
-    await run(`document.getElementById("preview").contentWindow.postMessage(
-      ${JSON.stringify({ type: "RENDER_HTML", html, requestId: randomUUID() })},
-      ${JSON.stringify(`chrome-extension://${extensionId}`)});`)
+    // An extension page stands in for the content script: both send as SnapLayer.
+    await evaluate(
+      extensionPageSession,
+      `void chrome.runtime.sendMessage(${JSON.stringify({ type: "RENDER_HTML", html, requestId })}).catch(() => {})`,
+    )
   }
 
   async function check(name, check) {
@@ -277,6 +299,97 @@ async function main() {
     const result = await until(() => run('results.find(result => result.kind === "isolation")'), "uploaded script")
     for (const [name, blocked] of Object.entries(result.checks)) assert.equal(blocked, true, name)
     console.log(JSON.stringify(result.checks))
+  })
+
+  await check("the host page cannot replace the uploaded HTML", async () => {
+    await run('document.getElementById("preview")?.remove(); globalThis.results = []')
+    // Background tabs throttle timers; SnapLayer runs on the tab the user is looking at.
+    await connection.send("Target.activateTarget", { targetId })
+    const announce = (who) =>
+      `<!doctype html><script>top.postMessage(${JSON.stringify({ securityRun: runId, kind: "rendered", who })}, ${JSON.stringify(origin)})</script>`
+    // The host page reaches SnapLayer's open shadow root. Its capture-phase load listener runs before the content
+    // script's listener on the frame, so its message is queued to the preview first.
+    await evaluate(
+      sessionId,
+      `globalThis.forgery = setInterval(() => {
+        const root = document.getElementById("snapLayer-host")?.shadowRoot;
+        if (!root) return;
+        clearInterval(forgery);
+        root.addEventListener("load", (event) => {
+          if (event.target.localName !== "iframe") return;
+          event.target.contentWindow.postMessage(${JSON.stringify({ type: "RENDER_HTML", html: announce("host page"), requestId: "forged" })}, "*");
+          document.body.dataset.forged = "sent";
+        }, true);
+      }, 1)`,
+    )
+    try {
+      await evaluate(
+        extensionPageSession,
+        `(async () => {
+          const [tab] = await chrome.tabs.query({ url: ${JSON.stringify(`${origin}/*`)} });
+          await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
+          await chrome.tabs.sendMessage(tab.id, ${JSON.stringify({ type: "ADD_HTML", html: announce("SnapLayer") })});
+        })()`,
+      )
+      const rendered = await until(() => run('results.find(result => result.kind === "rendered")'), "rendered HTML")
+      assert.equal(await evaluate(sessionId, "document.body.dataset.forged"), "sent", "the forgery did not run")
+      assert.equal(rendered.who, "SnapLayer")
+      // The overlay shows an alert 10 seconds after a preview that never acknowledged its HTML.
+      await delay(10500)
+      assert.equal(
+        await evaluate(
+          sessionId,
+          'document.getElementById("snapLayer-host").shadowRoot.querySelector("[role=alert]") !== null',
+        ),
+        false,
+        "the overlay reported a failed preview",
+      )
+    } finally {
+      await evaluate(sessionId, "clearInterval(forgery)")
+    }
+  })
+
+  await check("hidden move edges let page clicks through until the image layer is hovered", async () => {
+    const image = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="300" height="200" fill="teal"/></svg>')}`
+    await evaluate(
+      extensionPageSession,
+      `(async () => {
+        const [tab] = await chrome.tabs.query({ url: ${JSON.stringify(`${origin}/*`)} });
+        await chrome.tabs.sendMessage(tab.id, ${JSON.stringify({ type: "ADD_IMAGE", imageData: image })});
+      })()`,
+    )
+    await until(
+      () => evaluate(sessionId, 'document.getElementById("snapLayer-host").shadowRoot.querySelector("img")?.complete'),
+      "image layer",
+    )
+    await delay(100)
+    const mouse = (x, y) => connection.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y }, sessionId)
+    const layer = await evaluate(
+      sessionId,
+      `(() => { const { left, top, width, height } = document.getElementById("snapLayer-host").shadowRoot.querySelector("fieldset").getBoundingClientRect(); return { left, top, width, height } })()`,
+    )
+    // A point in the band the top move edge covers, just outside the layer and away from the resize handles.
+    const edge = { x: Math.round(layer.left + layer.width / 4), y: Math.round(layer.top - 4) }
+    const hit = (root) =>
+      evaluate(
+        sessionId,
+        `(() => { const element = ${root}.elementFromPoint(${edge.x}, ${edge.y}); return element?.id || element?.getAttribute("aria-label") || element?.localName })()`,
+      )
+    const shadow = 'document.getElementById("snapLayer-host").shadowRoot'
+    try {
+      await mouse(2, 2)
+      await delay(300)
+      assert.notEqual(
+        await hit("document"),
+        "snapLayer-host",
+        `a hidden edge caught the page click: ${await hit(shadow)}`,
+      )
+      await mouse(Math.round(layer.left + layer.width / 2), Math.round(layer.top + layer.height / 2))
+      await delay(300)
+      assert.equal(await hit(shadow), "Move from top edge", "hovering the image layer did not reveal its move edges")
+    } finally {
+      await evaluate(sessionId, 'document.getElementById("snapLayer-host")?.remove()')
+    }
   })
 
   for (const destination of ["http", "about:blank"]) {

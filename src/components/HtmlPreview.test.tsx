@@ -1,12 +1,17 @@
 import { act, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
-import { HTML_PREVIEW_READY } from "@/htmlPreview"
+import { HTML_PREVIEW_READY, type HtmlPreviewRequest } from "@/htmlPreview"
 import { HtmlPreview } from "./HtmlPreview"
 
 describe("HtmlPreview", () => {
+  let replies: ((reply: unknown) => void)[]
+
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.spyOn(window, "addEventListener")
+    replies = []
+    vi.mocked(chrome.runtime.sendMessage).mockImplementation(
+      () => new Promise((resolve) => replies.push(resolve)) as never,
+    )
   })
 
   afterEach(() => {
@@ -16,78 +21,77 @@ describe("HtmlPreview", () => {
 
   function load() {
     const frame = screen.getByTitle("HTML preview") as HTMLIFrameElement
-    assert(frame.contentWindow)
-    const post = vi.spyOn(frame.contentWindow, "postMessage").mockImplementation(() => {})
-    post.mockClear()
     fireEvent.load(frame)
-    const request = post.mock.calls[0][0]
-    return { frame, post, request }
+    const calls = vi.mocked(chrome.runtime.sendMessage).mock.calls
+    const request = calls.at(-1)?.[0] as unknown as HtmlPreviewRequest
+    assert(request)
+    return { frame, request, reply: replies.at(-1) as (reply: unknown) => void }
   }
 
-  function acknowledge(frame: HTMLIFrameElement, requestId: string, overrides: Partial<MessageEvent> = {}) {
-    const registrations = vi.mocked(window.addEventListener).mock.calls.filter(([type]) => type === "message")
-    const listener = registrations.at(-1)?.[1]
-    assert(typeof listener === "function")
-    // jsdom cannot deliver a browser-generated message from a chrome-extension origin.
-    act(() =>
-      listener.call(window, {
-        isTrusted: true,
-        source: frame.contentWindow,
-        origin: "chrome-extension://snaplayer-test",
-        data: { type: HTML_PREVIEW_READY, requestId },
-        ...overrides,
-      } as MessageEvent),
-    )
+  async function answer(reply: (reply: unknown) => void, value: unknown) {
+    await act(async () => reply(value))
   }
 
-  it("sends private HTML only to the extension origin and accepts its acknowledgement", () => {
+  it("sends private HTML through the runtime to the preview page named by its request ID", async () => {
     const html = "<h1>Private design mock</h1>"
     render(<HtmlPreview html={html} width={640} height={480} opacity={100} visible interactive />)
-    const { frame, post, request } = load()
-    expect(post).toHaveBeenCalledWith(
-      { type: "RENDER_HTML", html, requestId: expect.any(String) },
-      "chrome-extension://snaplayer-test",
-    )
+    const { frame, request, reply } = load()
+    expect(request).toEqual({ type: "RENDER_HTML", html, requestId: expect.any(String) })
     expect(request.requestId).not.toBe("")
+    expect(frame.src).toBe(`chrome-extension://snaplayer-test/html-preview.html?request=${request.requestId}`)
     expect(document.body.innerHTML).not.toContain("Private design mock")
-    acknowledge(frame, request.requestId)
+    await answer(reply, { type: HTML_PREVIEW_READY })
     act(() => vi.advanceTimersByTime(10000))
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
   it.each([
-    ["origin", { origin: "https://example.com" }],
-    ["source", { source: window }],
-    ["request", { data: { type: HTML_PREVIEW_READY, requestId: "another-request" } }],
-    ["type", { data: { type: "FETCH" } }],
-    ["synthetic event", { isTrusted: false }],
-    ["missing data", { data: null }],
-  ])("ignores an acknowledgement with an invalid %s", (_invalid, overrides) => {
+    ["no reply", undefined],
+    ["another type", { type: "FETCH" }],
+  ])("reports a failed preview when the runtime returns %s", async (_invalid, value) => {
     render(<HtmlPreview html="<h1>Mock</h1>" width={640} height={480} opacity={100} visible interactive />)
-    const { frame, request } = load()
-    acknowledge(frame, request.requestId, overrides)
+    const { reply } = load()
+    await answer(reply, value)
     act(() => vi.advanceTimersByTime(10000))
     expect(screen.getByRole("alert")).toBeInTheDocument()
-    acknowledge(frame, request.requestId)
+  })
+
+  it("reports a failed preview when no preview page receives the HTML", async () => {
+    vi.mocked(chrome.runtime.sendMessage).mockRejectedValue(new Error("Receiving end does not exist."))
+    render(<HtmlPreview html="<h1>Mock</h1>" width={640} height={480} opacity={100} visible interactive />)
+    load()
+    await act(async () => {})
+    act(() => vi.advanceTimersByTime(10000))
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+  })
+
+  it("sends the HTML again when the preview document reloads", async () => {
+    render(<HtmlPreview html="<h1>Mock</h1>" width={640} height={480} opacity={100} visible interactive />)
+    const first = load()
+    await answer(first.reply, { type: HTML_PREVIEW_READY })
+    const second = load()
+    expect(second.request).toEqual(first.request)
+    act(() => vi.advanceTimersByTime(10000))
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+    await answer(second.reply, { type: HTML_PREVIEW_READY })
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
-  it("ignores the previous request after switching HTML", () => {
+  it("ignores the previous request after switching HTML", async () => {
     const { rerender, unmount } = render(
       <HtmlPreview html="<h1>First</h1>" width={640} height={480} opacity={100} visible interactive />,
     )
-    const { frame, request: first } = load()
-    const remove = vi.spyOn(window, "removeEventListener")
+    const first = load()
     rerender(<HtmlPreview html="<h1>Second</h1>" width={640} height={480} opacity={100} visible interactive />)
-    const { request: second } = load()
-    expect(second.requestId).not.toBe(first.requestId)
-    acknowledge(frame, first.requestId)
+    const second = load()
+    expect(second.request.requestId).not.toBe(first.request.requestId)
+    expect(vi.mocked(chrome.runtime.sendMessage)).toHaveBeenCalledTimes(2)
+    await answer(first.reply, { type: HTML_PREVIEW_READY })
     act(() => vi.advanceTimersByTime(10000))
     expect(screen.getByRole("alert")).toBeInTheDocument()
-    acknowledge(frame, second.requestId)
+    await answer(second.reply, { type: HTML_PREVIEW_READY })
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     unmount()
-    expect(remove.mock.calls.filter(([type]) => type === "message")).toHaveLength(2)
   })
 
   it("reports a missing renderer acknowledgement instead of leaving a blank layer indefinitely", () => {

@@ -1,35 +1,42 @@
-import { HTML_PREVIEW_READY, HTML_SANDBOX_PAGE, type HtmlPreviewRequest } from "../htmlPreview"
+import {
+  HTML_PREVIEW_READY,
+  HTML_PREVIEW_REQUEST_PARAM,
+  HTML_SANDBOX_PAGE,
+  type HtmlPreviewRequest,
+} from "../htmlPreview"
 
-let connected = false
+const requestId = new URLSearchParams(location.search).get(HTML_PREVIEW_REQUEST_PARAM)
+let frame: HTMLIFrameElement | null = null
 
-window.addEventListener("message", (event: MessageEvent) => {
+// Runtime messages come only from SnapLayer itself; the host page can reach this frame but cannot send them.
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (
-    connected ||
-    event.source !== parent ||
-    event.data?.type !== "RENDER_HTML" ||
-    typeof event.data.html !== "string" ||
-    typeof event.data.requestId !== "string" ||
-    event.data.requestId.length === 0
+    frame ||
+    !requestId ||
+    message?.type !== "RENDER_HTML" ||
+    message.requestId !== requestId ||
+    typeof message.html !== "string"
   )
     return
-  connected = true
-  const request: HtmlPreviewRequest = event.data
-  const frame = document.createElement("iframe")
-  frame.title = "Sandboxed HTML"
+  const request: HtmlPreviewRequest = message
+  const sandbox = document.createElement("iframe")
+  frame = sandbox
+  sandbox.title = "Sandboxed HTML"
   // Keep replacement documents isolated when the host navigates this frame.
-  frame.setAttribute("sandbox", "allow-scripts")
-  frame.addEventListener(
+  sandbox.setAttribute("sandbox", "allow-scripts")
+  sandbox.addEventListener(
     "load",
     () => {
-      frame.contentWindow?.postMessage({ type: "RENDER_HTML", html: request.html }, "*")
+      sandbox.contentWindow?.postMessage({ type: "RENDER_HTML", html: request.html }, "*")
     },
     { once: true },
   )
   window.addEventListener("message", (reply) => {
-    if (reply.source === frame.contentWindow && reply.origin === "null" && reply.data?.type === HTML_PREVIEW_READY) {
-      parent.postMessage({ type: reply.data.type, requestId: request.requestId }, event.origin)
+    if (reply.source === sandbox.contentWindow && reply.origin === "null" && reply.data?.type === HTML_PREVIEW_READY) {
+      sendResponse({ type: HTML_PREVIEW_READY })
     }
   })
-  frame.src = HTML_SANDBOX_PAGE
-  document.body.appendChild(frame)
+  sandbox.src = HTML_SANDBOX_PAGE
+  document.body.appendChild(sandbox)
+  return true
 })

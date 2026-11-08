@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react"
-import { HTML_PREVIEW_PAGE, HTML_PREVIEW_READY, type HtmlPreviewRequest } from "@/htmlPreview"
+import {
+  HTML_PREVIEW_PAGE,
+  HTML_PREVIEW_READY,
+  HTML_PREVIEW_REQUEST_PARAM,
+  type HtmlPreviewRequest,
+} from "@/htmlPreview"
 
 interface HtmlPreviewProps {
   html: string
@@ -18,34 +23,35 @@ export function HtmlPreview({ html, width, height, opacity, visible, interactive
     const frame = frameRef.current
     if (!frame) return
     const requestId = crypto.getRandomValues(new Uint32Array(4)).join("-")
-    const extensionOrigin = chrome.runtime.getURL("").replace(/\/$/, "")
-    setError(false)
-    const timeout = window.setTimeout(() => setError(true), 10000)
-    const acknowledge = (event: MessageEvent) => {
-      // The host page can forge MessageEvent fields, but not isTrusted.
-      if (
-        !event.isTrusted ||
-        event.source !== frame.contentWindow ||
-        event.origin !== extensionOrigin ||
-        event.data?.type !== HTML_PREVIEW_READY ||
-        event.data?.requestId !== requestId
-      )
-        return
+    let active = true
+    let timeout = 0
+    const startTimeout = () => {
       window.clearTimeout(timeout)
-      setError(false)
+      timeout = window.setTimeout(() => setError(true), 10000)
     }
+    setError(false)
+    startTimeout()
     const connect = () => {
-      // Keep uploaded HTML out of the host DOM and send it only to an extension origin.
+      startTimeout()
+      // Runtime messages keep uploaded HTML out of the host page, which also cannot forge them.
       const request: HtmlPreviewRequest = { type: "RENDER_HTML", html, requestId }
-      frame.contentWindow?.postMessage(request, extensionOrigin)
+      chrome.runtime.sendMessage(request).then(
+        (reply) => {
+          if (!active || reply?.type !== HTML_PREVIEW_READY) return
+          window.clearTimeout(timeout)
+          setError(false)
+        },
+        // No preview page answered; the timeout reports it.
+        () => {},
+      )
     }
-    window.addEventListener("message", acknowledge)
-    frame.addEventListener("load", connect, { once: true })
-    frame.src = chrome.runtime.getURL(HTML_PREVIEW_PAGE)
+    // Send again on every load so a reloaded preview document is not left blank.
+    frame.addEventListener("load", connect)
+    frame.src = chrome.runtime.getURL(`${HTML_PREVIEW_PAGE}?${HTML_PREVIEW_REQUEST_PARAM}=${requestId}`)
     return () => {
+      active = false
       frame.removeEventListener("load", connect)
       window.clearTimeout(timeout)
-      window.removeEventListener("message", acknowledge)
     }
   }, [html])
 

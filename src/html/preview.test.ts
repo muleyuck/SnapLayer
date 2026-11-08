@@ -14,6 +14,16 @@ const sandboxHtml = readFileSync(resolve("public", HTML_SANDBOX_PAGE), "utf8")
 
 describe("HTML preview isolation boundary", () => {
   let listeners: EventListenerOrEventListenerObject[]
+  let onMessage: (message: unknown, sender: unknown, sendResponse: (response: unknown) => void) => unknown
+
+  async function loadPreview(search: string) {
+    window.history.replaceState(null, "", `/html-preview.html${search}`)
+    vi.resetModules()
+    await import("./preview")
+    const registration = vi.mocked(chrome.runtime.onMessage.addListener).mock.calls.at(-1)?.[0]
+    assert(registration)
+    onMessage = registration as typeof onMessage
+  }
 
   beforeEach(async () => {
     listeners = []
@@ -22,43 +32,54 @@ describe("HTML preview isolation boundary", () => {
       if (type === "message") listeners.push(listener)
       add(type, listener, options)
     })
-    vi.resetModules()
-    await import("./preview")
+    await loadPreview("?request=request-27")
   })
 
   afterEach(() => {
     for (const listener of listeners) window.removeEventListener("message", listener)
     document.body.replaceChildren()
+    window.history.replaceState(null, "", "/")
     vi.restoreAllMocks()
   })
 
-  function request(
-    data: unknown = { type: "RENDER_HTML", html: "<h1>Mock</h1>", requestId: "request-27" },
-    source: Window | null = window,
-  ) {
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        source,
-        origin: "https://comparison.example",
-        data,
-      }),
-    )
+  function request(data: unknown = { type: "RENDER_HTML", html: "<h1>Mock</h1>", requestId: "request-27" }) {
+    const sendResponse = vi.fn()
+    const keepsChannelOpen = onMessage(data, { id: "snaplayer-test" }, sendResponse)
+    return { sendResponse, keepsChannelOpen }
   }
 
-  it.each([
-    ["source", undefined, null],
-    ["type", { type: "FETCH", url: "https://private.example" }, window],
-    ["HTML", { type: "RENDER_HTML", html: 42, requestId: "request-27" }, window],
-    ["request ID", { type: "RENDER_HTML", html: "<h1>Mock</h1>" }, window],
-    ["empty request ID", { type: "RENDER_HTML", html: "<h1>Mock</h1>", requestId: "" }, window],
-  ])("ignores an invalid request: %s", (_invalid, data, source) => {
-    request(data, source)
+  it("ignores host-page window messages", () => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        source: window,
+        origin: "https://comparison.example",
+        data: { type: "RENDER_HTML", html: "<h1>Forged</h1>", requestId: "request-27" },
+      }),
+    )
     expect(document.querySelector("iframe")).toBeNull()
   })
 
-  it("passes HTML only into the declared sandbox and relays its acknowledgement to the parent origin", () => {
+  it.each([
+    ["type", { type: "FETCH", url: "https://private.example" }],
+    ["HTML", { type: "RENDER_HTML", html: 42, requestId: "request-27" }],
+    ["missing request ID", { type: "RENDER_HTML", html: "<h1>Mock</h1>" }],
+    ["request ID of another preview", { type: "RENDER_HTML", html: "<h1>Mock</h1>", requestId: "request-91" }],
+    ["missing data", null],
+  ])("ignores an invalid request: %s", (_invalid, data) => {
+    expect(request(data).keepsChannelOpen).toBeUndefined()
+    expect(document.querySelector("iframe")).toBeNull()
+  })
+
+  it("ignores every request when the page was opened without a request ID", async () => {
+    await loadPreview("")
+    request({ type: "RENDER_HTML", html: "<h1>Mock</h1>", requestId: "" })
+    expect(document.querySelector("iframe")).toBeNull()
+  })
+
+  it("passes HTML only into the declared sandbox and answers once the sandbox renders it", () => {
     const html = "<!doctype html><h1>日本語の mock</h1><script>window.mock = true</script>"
-    request({ type: "RENDER_HTML", html, requestId: "request-27" })
+    const { sendResponse, keepsChannelOpen } = request({ type: "RENDER_HTML", html, requestId: "request-27" })
+    expect(keepsChannelOpen).toBe(true)
     const frame = document.querySelector("iframe")
     assert(frame?.contentWindow)
     expect(frame.getAttribute("src")).toBe(HTML_SANDBOX_PAGE)
@@ -91,7 +112,6 @@ describe("HTML preview isolation boundary", () => {
       expect(documentFrame.getAttribute("sandbox")).toBe("allow-scripts")
       expect(reply).toHaveBeenCalledWith({ type: HTML_PREVIEW_READY }, "chrome-extension://snaplayer-test")
 
-      const acknowledge = vi.spyOn(window.parent, "postMessage").mockImplementation(() => {})
       window.dispatchEvent(
         new MessageEvent("message", {
           source: window,
@@ -99,7 +119,7 @@ describe("HTML preview isolation boundary", () => {
           data: reply.mock.calls[0][0],
         }),
       )
-      expect(acknowledge).not.toHaveBeenCalled()
+      expect(sendResponse).not.toHaveBeenCalled()
       window.dispatchEvent(
         new MessageEvent("message", {
           source: frame.contentWindow,
@@ -107,7 +127,7 @@ describe("HTML preview isolation boundary", () => {
           data: reply.mock.calls[0][0],
         }),
       )
-      expect(acknowledge).not.toHaveBeenCalled()
+      expect(sendResponse).not.toHaveBeenCalled()
       window.dispatchEvent(
         new MessageEvent("message", {
           source: frame.contentWindow,
@@ -115,23 +135,20 @@ describe("HTML preview isolation boundary", () => {
           data: reply.mock.calls[0][0],
         }),
       )
-      expect(acknowledge).toHaveBeenCalledWith(
-        { type: HTML_PREVIEW_READY, requestId: "request-27" },
-        "https://comparison.example",
-      )
+      expect(sendResponse).toHaveBeenCalledWith({ type: HTML_PREVIEW_READY })
     } finally {
       sandbox.window.close()
     }
   })
 
   it("accepts a valid request after malformed input and ignores replacement requests", () => {
-    request({ type: "RENDER_HTML", html: { unsafe: true }, requestId: "bad-request" })
+    request({ type: "RENDER_HTML", html: { unsafe: true }, requestId: "request-27" })
     request({ type: "RENDER_HTML", html: "<h1>Allowed mock</h1>", requestId: "request-27" })
     const frame = document.querySelector("iframe")
     assert(frame?.contentWindow)
     const post = vi.spyOn(frame.contentWindow, "postMessage").mockImplementation(() => {})
     frame.dispatchEvent(new Event("load"))
-    request({ type: "RENDER_HTML", html: "<h1>Replacement</h1>", requestId: "request-91" })
+    request({ type: "RENDER_HTML", html: "<h1>Replacement</h1>", requestId: "request-27" })
     frame.dispatchEvent(new Event("load"))
     expect(document.querySelectorAll("iframe")).toHaveLength(1)
     expect(post).toHaveBeenCalledTimes(1)
