@@ -16,6 +16,8 @@ window.addEventListener("message", (event: MessageEvent) => {
   const request: HtmlPreviewRequest = event.data
   const frame = document.createElement("iframe")
   frame.title = "Sandboxed HTML"
+  // Keep replacement documents isolated when the host navigates this frame.
+  frame.setAttribute("sandbox", "allow-scripts")
   frame.addEventListener(
     "load",
     () => {

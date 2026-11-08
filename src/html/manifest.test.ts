@@ -3,6 +3,19 @@ import manifest from "../../public/manifest.json"
 import { HTML_PREVIEW_PAGE, HTML_SANDBOX_PAGE } from "../htmlPreview"
 
 describe("HTML preview manifest", () => {
+  it("prevents extension pages from loading a replacement renderer from another origin", () => {
+    const policy = Reflect.get(manifest.content_security_policy, "extension_pages") ?? ""
+    const directives = Object.fromEntries(
+      policy.split(";").map((directive: string) => {
+        const [name, ...values] = directive.trim().split(/\s+/)
+        return [name, values]
+      }),
+    )
+    expect(directives["frame-src"]).toEqual(["'self'"])
+    expect(directives["script-src"]).toEqual(["'self'"])
+    expect(directives["object-src"]).toEqual(["'self'"])
+  })
+
   it("exposes both frame pages while withholding extension privileges from the renderer", () => {
     expect(manifest.permissions).toEqual(["activeTab", "scripting"])
     expect(manifest.sandbox.pages).toEqual([HTML_SANDBOX_PAGE])

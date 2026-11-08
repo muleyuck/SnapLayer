@@ -62,6 +62,7 @@ describe("HTML preview isolation boundary", () => {
     const frame = document.querySelector("iframe")
     assert(frame?.contentWindow)
     expect(frame.getAttribute("src")).toBe(HTML_SANDBOX_PAGE)
+    expect(frame.getAttribute("sandbox")).toBe("allow-scripts")
     const post = vi.spyOn(frame.contentWindow, "postMessage").mockImplementation(() => {})
     expect(post).not.toHaveBeenCalled()
     frame.dispatchEvent(new Event("load"))

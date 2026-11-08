@@ -12,6 +12,7 @@
   ],
   "sandbox": { "pages": ["html-sandbox.html"] },
   "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self';",
     "sandbox": "sandbox allow-scripts; default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:; style-src 'unsafe-inline' https: data: blob:; img-src https: data: blob:; font-src https: data: blob:; connect-src https:; frame-src 'self' about:;"
   },
   "icons": {
