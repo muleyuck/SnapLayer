@@ -1,5 +1,4 @@
 import "@testing-library/jest-dom/vitest"
-import { MessageChannel } from "node:worker_threads"
 import { beforeAll, beforeEach, vi } from "vitest"
 
 // Chrome API mock
@@ -23,7 +22,6 @@ const chromeMock = {
 
 beforeAll(() => {
   vi.stubGlobal("chrome", chromeMock)
-  vi.stubGlobal("MessageChannel", MessageChannel)
 })
 
 // Mock Image constructor (jsdom doesn't fire onload for data URLs)
@@ -41,6 +39,15 @@ class MockImage {
 }
 
 vi.stubGlobal("Image", MockImage)
+
+// jsdom does not implement element layout observation.
+vi.stubGlobal(
+  "ResizeObserver",
+  class {
+    observe() {}
+    disconnect() {}
+  },
+)
 
 // Reset mocks before each test
 beforeEach(() => {

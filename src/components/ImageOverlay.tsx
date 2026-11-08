@@ -10,6 +10,7 @@ const MAX_Z_INDEX = 2147483647
 
 const ARROW_MOVE_STEP = 1
 const ARROW_MOVE_STEP_LARGE = 10
+const MOVE_EDGES = ["top", "right", "bottom", "left"] as const
 
 const ARROW_KEY_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
   ArrowUp: { dx: 0, dy: -1 },
@@ -30,6 +31,23 @@ const fieldsetCva = cva("fixed m-0 box-border select-none border-none p-0 focus:
     },
   },
 })
+const moveEdgeCva = cva(
+  "absolute cursor-grab border-blue-500 p-0 transition-opacity duration-200 active:cursor-grabbing",
+  {
+    variants: {
+      edge: {
+        top: "inset-x-0 -top-2 h-2 border-b",
+        right: "inset-y-0 -right-2 w-2 border-l",
+        bottom: "inset-x-0 -bottom-2 h-2 border-t",
+        left: "inset-y-0 -left-2 w-2 border-r",
+      },
+      visible: {
+        true: "opacity-100",
+        false: "opacity-0",
+      },
+    },
+  },
+)
 const resizeHandleCva = cva(
   "absolute h-2.5 w-2.5 rounded-sm border border-white bg-blue-500 transition-opacity duration-200",
   {
@@ -68,8 +86,14 @@ export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
 
   const fieldsetRef = useRef<HTMLFieldSetElement>(null)
 
+  const handleMoveStart: React.PointerEventHandler<HTMLElement> = (event) => {
+    event.stopPropagation()
+    handleDragStart(event, true)
+    fieldsetRef.current?.focus()
+  }
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFieldSetElement>) => {
-    if (event.key === "Backspace" && (event.target as HTMLElement).tagName !== "INPUT") {
+    if ((event.key === "Backspace" || event.key === "Delete") && (event.target as HTMLElement).tagName !== "INPUT") {
       event.preventDefault()
       event.stopPropagation()
       onDelete()
@@ -146,18 +170,20 @@ export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
           interactive={!isDragging && !isResizing}
         />
       )}
+      {state.isVisibleImage &&
+        MOVE_EDGES.map((edge) => (
+          <button
+            key={edge}
+            type="button"
+            aria-label={`Move from ${edge} edge`}
+            title="Drag edge to move"
+            className={moveEdgeCva({ edge, visible: showHandles })}
+            onPointerDown={handleMoveStart}
+          />
+        ))}
       {/* Toolbar */}
-      <ImageToolbar
-        state={state}
-        dispatch={dispatch}
-        onDelete={onDelete}
-        onMoveStart={(event) => {
-          event.stopPropagation()
-          handleDragStart(event, true)
-          fieldsetRef.current?.focus()
-        }}
-      />
-      {/* Resize handles */}
+      <ImageToolbar state={state} dispatch={dispatch} onDelete={onDelete} onMoveStart={handleMoveStart} />
+      {/* Later siblings keep resize handles above overlapping move edges. */}
       {state.isVisibleImage &&
         RESIZE_DIRECTIONS.map((direction) => (
           <button
@@ -165,7 +191,10 @@ export function ImageOverlay({ imageData, html, onDelete }: ImageOverlayProps) {
             type="button"
             aria-label={`Resize from ${direction}`}
             className={resizeHandleCva({ direction, visible: showHandles })}
-            onPointerDown={handleResizeStart(direction)}
+            onPointerDown={(event) => {
+              handleResizeStart(direction)(event)
+              fieldsetRef.current?.focus()
+            }}
           />
         ))}
       {/* Snap guides */}

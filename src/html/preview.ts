@@ -1,30 +1,31 @@
-import { HTML_PREVIEW_CONNECT, HTML_PREVIEW_READY, HTML_SANDBOX_PAGE, type HtmlPreviewRequest } from "../htmlPreview"
+import { HTML_PREVIEW_READY, HTML_SANDBOX_PAGE, type HtmlPreviewRequest } from "../htmlPreview"
 
 let connected = false
 
 window.addEventListener("message", (event: MessageEvent) => {
-  if (connected || event.source !== parent || event.data !== HTML_PREVIEW_CONNECT || event.ports.length !== 1) return
+  if (
+    connected ||
+    event.source !== parent ||
+    event.data?.type !== "RENDER_HTML" ||
+    typeof event.data.html !== "string" ||
+    typeof event.data.requestId !== "string" ||
+    event.data.requestId.length === 0
+  )
+    return
   connected = true
-  const port = event.ports[0]
+  const request: HtmlPreviewRequest = event.data
   const frame = document.createElement("iframe")
   frame.title = "Sandboxed HTML"
-  let loaded = false
-  let request: HtmlPreviewRequest | undefined
-  const render = () => {
-    if (loaded && request) frame.contentWindow?.postMessage(request, "*")
-  }
-  frame.addEventListener("load", () => {
-    loaded = true
-    render()
-  })
-  port.onmessage = ({ data }) => {
-    if (request || data?.type !== "RENDER_HTML" || typeof data.html !== "string") return
-    request = data
-    render()
-  }
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage({ type: "RENDER_HTML", html: request.html }, "*")
+    },
+    { once: true },
+  )
   window.addEventListener("message", (reply) => {
     if (reply.source === frame.contentWindow && reply.origin === "null" && reply.data?.type === HTML_PREVIEW_READY) {
-      port.postMessage({ type: HTML_PREVIEW_READY })
+      parent.postMessage({ type: reply.data.type, requestId: request.requestId }, event.origin)
     }
   })
   frame.src = HTML_SANDBOX_PAGE

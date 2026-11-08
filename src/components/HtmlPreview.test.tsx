@@ -1,41 +1,96 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { afterEach, assert, describe, expect, it, vi } from "vitest"
-import { HTML_PREVIEW_CONNECT, HTML_PREVIEW_READY } from "@/htmlPreview"
+import { act, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vitest"
+import { HTML_PREVIEW_READY } from "@/htmlPreview"
 import { HtmlPreview } from "./HtmlPreview"
 
 describe("HtmlPreview", () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.spyOn(window, "addEventListener")
+  })
+
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it("sends private HTML through a port to the extension origin and waits for its acknowledgement", async () => {
-    const clearTimeout = vi.spyOn(window, "clearTimeout")
-    const setTimeout = vi.spyOn(window, "setTimeout")
-    const html = "<h1>Private design mock</h1>"
-    const { unmount } = render(<HtmlPreview html={html} width={640} height={480} opacity={100} visible interactive />)
-    const timeout = setTimeout.mock.results[0].value
+  function load() {
     const frame = screen.getByTitle("HTML preview") as HTMLIFrameElement
     assert(frame.contentWindow)
     const post = vi.spyOn(frame.contentWindow, "postMessage").mockImplementation(() => {})
+    post.mockClear()
     fireEvent.load(frame)
-    expect(post).toHaveBeenCalledWith(HTML_PREVIEW_CONNECT, "chrome-extension://snaplayer-test", expect.any(Array))
-    const [, , ports] = post.mock.calls[0] as unknown as [unknown, string, MessagePort[]]
-    const port = ports[0]
-    const request = await new Promise((resolve) => {
-      port.onmessage = ({ data }) => resolve(data)
-    })
-    expect(request).toEqual({ type: "RENDER_HTML", html })
+    const request = post.mock.calls[0][0]
+    return { frame, post, request }
+  }
+
+  function acknowledge(frame: HTMLIFrameElement, requestId: string, overrides: Partial<MessageEvent> = {}) {
+    const registrations = vi.mocked(window.addEventListener).mock.calls.filter(([type]) => type === "message")
+    const listener = registrations.at(-1)?.[1]
+    assert(typeof listener === "function")
+    // jsdom cannot deliver a browser-generated message from a chrome-extension origin.
+    act(() =>
+      listener.call(window, {
+        isTrusted: true,
+        source: frame.contentWindow,
+        origin: "chrome-extension://snaplayer-test",
+        data: { type: HTML_PREVIEW_READY, requestId },
+        ...overrides,
+      } as MessageEvent),
+    )
+  }
+
+  it("sends private HTML only to the extension origin and accepts its acknowledgement", () => {
+    const html = "<h1>Private design mock</h1>"
+    render(<HtmlPreview html={html} width={640} height={480} opacity={100} visible interactive />)
+    const { frame, post, request } = load()
+    expect(post).toHaveBeenCalledWith(
+      { type: "RENDER_HTML", html, requestId: expect.any(String) },
+      "chrome-extension://snaplayer-test",
+    )
+    expect(request.requestId).not.toBe("")
     expect(document.body.innerHTML).not.toContain("Private design mock")
-    port.postMessage({ type: HTML_PREVIEW_READY })
-    await waitFor(() => expect(clearTimeout).toHaveBeenCalledWith(timeout))
+    acknowledge(frame, request.requestId)
+    act(() => vi.advanceTimersByTime(10000))
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ["origin", { origin: "https://example.com" }],
+    ["source", { source: window }],
+    ["request", { data: { type: HTML_PREVIEW_READY, requestId: "another-request" } }],
+    ["type", { data: { type: "FETCH" } }],
+    ["synthetic event", { isTrusted: false }],
+    ["missing data", { data: null }],
+  ])("ignores an acknowledgement with an invalid %s", (_invalid, overrides) => {
+    render(<HtmlPreview html="<h1>Mock</h1>" width={640} height={480} opacity={100} visible interactive />)
+    const { frame, request } = load()
+    acknowledge(frame, request.requestId, overrides)
+    act(() => vi.advanceTimersByTime(10000))
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+    acknowledge(frame, request.requestId)
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("ignores the previous request after switching HTML", () => {
+    const { rerender, unmount } = render(
+      <HtmlPreview html="<h1>First</h1>" width={640} height={480} opacity={100} visible interactive />,
+    )
+    const { frame, request: first } = load()
+    const remove = vi.spyOn(window, "removeEventListener")
+    rerender(<HtmlPreview html="<h1>Second</h1>" width={640} height={480} opacity={100} visible interactive />)
+    const { request: second } = load()
+    expect(second.requestId).not.toBe(first.requestId)
+    acknowledge(frame, first.requestId)
+    act(() => vi.advanceTimersByTime(10000))
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+    acknowledge(frame, second.requestId)
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
     unmount()
-    port.close()
+    expect(remove.mock.calls.filter(([type]) => type === "message")).toHaveLength(2)
   })
 
   it("reports a missing renderer acknowledgement instead of leaving a blank layer indefinitely", () => {
-    vi.useFakeTimers()
     const { unmount } = render(
       <HtmlPreview html="<h1>Mock</h1>" width={640} height={480} opacity={100} visible interactive />,
     )

@@ -1,18 +1,19 @@
 import { cva } from "class-variance-authority"
-import { useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import {
   CloseIcon,
   CollapseIcon,
   ExpandIcon,
   EyeIcon,
   EyeSlashIcon,
-  GripIcon,
   LockIcon,
   LockSlashIcon,
   SettingsIcon,
   SettingsIconFilled,
 } from "@/components/Icons"
 import type { ImageOverlayAction, ImageOverlayState } from "@/hooks/imageOverlayReducer"
+
+const TOOLBAR_INSET = 8
 
 const toolbarCva = cva("flex items-center gap-1.5 overflow-hidden transition-all duration-150", {
   variants: {
@@ -22,13 +23,9 @@ const toolbarCva = cva("flex items-center gap-1.5 overflow-hidden transition-all
     },
   },
 })
-const inputCva = cva("w-16 rounded border border-natural-600 bg-gray-800 px-1.5 py-0.5")
-const buttonCva = cva("rounded p-0.5 text-sm", {
+const inputCva = cva("border-natural-600 w-16 cursor-text rounded border bg-gray-800 px-1.5 py-0.5")
+const buttonCva = cva("cursor-pointer rounded p-0.5 text-sm", {
   variants: {
-    cursor: {
-      pointer: "cursor-pointer",
-      grab: "cursor-grab active:cursor-grabbing",
-    },
     color: {
       red: "bg-red-600 hover:bg-gray-700",
       natural: "hover:bg-gray-700",
@@ -38,37 +35,67 @@ const buttonCva = cva("rounded p-0.5 text-sm", {
       false: "",
     },
   },
-  defaultVariants: { cursor: "pointer" },
 })
 
 interface ImageToolbarProps {
   state: ImageOverlayState
   dispatch: React.ActionDispatch<[action: ImageOverlayAction]>
   onDelete: () => void
-  onMoveStart: React.PointerEventHandler<HTMLButtonElement>
+  onMoveStart: React.PointerEventHandler<HTMLElement>
 }
 
 export const ImageToolbar = ({ state, dispatch, onDelete, onMoveStart }: ImageToolbarProps) => {
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  const [layout, setLayout] = useState({
+    width: 0,
+    height: 0,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+  })
   const [isToolbarExpand, setIsToolbarExpand] = useState(true)
   const [preExpandSnapshot, setPreExpandSnapshot] = useState<{
     position: { x: number; y: number }
     size: { width: number; height: number }
   } | null>(null)
+
+  useLayoutEffect(() => {
+    const toolbar = toolbarRef.current
+    if (!toolbar) return
+    const measure = () => {
+      const { width, height } = toolbar.getBoundingClientRect()
+      setLayout({ width, height, viewportWidth: window.innerWidth, viewportHeight: window.innerHeight })
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(toolbar)
+    window.addEventListener("resize", measure)
+    measure()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [])
+
   return (
     <div
+      ref={toolbarRef}
       role="toolbar"
       aria-label="Layer controls"
-      className="absolute top-2 left-2 flex h-7 items-center whitespace-nowrap rounded-md bg-black/85 px-2.5 font-sans text-white text-xs transition-all duration-150"
+      className="flex h-7 cursor-grab items-center rounded-md bg-black/85 px-2.5 font-sans text-xs whitespace-nowrap text-white active:cursor-grabbing"
+      onPointerDown={(event) => {
+        if ((event.target as Element).closest("button, input, select, textarea")) {
+          event.stopPropagation()
+          return
+        }
+        onMoveStart(event)
+      }}
+      style={{
+        position: "fixed",
+        left: Math.max(0, Math.min(state.position.x + TOOLBAR_INSET, layout.viewportWidth - layout.width)),
+        top: Math.max(0, Math.min(state.position.y + TOOLBAR_INSET, layout.viewportHeight - layout.height)),
+        width: "max-content",
+        maxWidth: "100vw",
+      }}
     >
-      <button
-        type="button"
-        aria-label="Move layer"
-        title="Drag to move"
-        className={buttonCva({ color: "natural", cursor: "grab" })}
-        onPointerDown={onMoveStart}
-      >
-        <GripIcon />
-      </button>
       {/* Toggle button */}
       <button
         type="button"
