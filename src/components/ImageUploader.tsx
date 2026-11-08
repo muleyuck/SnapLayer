@@ -25,13 +25,7 @@ export default function ImageUploader({ onImage, onHtml }: Props) {
         throw new Error("Can't get selected file")
       }
       if (file.type === "text/html" || /\.html?$/i.test(file.name)) {
-        const html = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(reader.result as string)
-          reader.onerror = reject
-          reader.readAsText(file)
-        })
-        await onHtml(html)
+        await onHtml(await file.text())
       } else {
         await onImage(await fileToDataUrl(file))
       }
