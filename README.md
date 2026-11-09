@@ -53,7 +53,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 1. Click the SnapLayer extension icon in Chrome toolbar
 2. Select a JPEG, PNG, SVG or HTML file from your computer
 3. The file appears as an overlay on the current page
-4. **Move**: Drag the grip at the left of the toolbar to reposition any layer; images can also be dragged directly
+4. **Move**: Drag any outer edge or the toolbar background to reposition any layer; images can also be dragged directly
 5. **Resize**: Drag the corner or edge handles
 6. **Adjust**: Use the toolbar to change opacity, toggle visibility, or delete
 
@@ -61,7 +61,6 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 | Control | Description |
 |---------|-------------|
-| Grip Icon | Drag to move the layer (images, SVG and HTML) |
 | Width / Height | Enter exact pixel dimensions |
 | Expand Icon | Fit to viewport width (click again to restore) |
 | Opacity Slider | Adjust image transparency (0-100%) |
@@ -73,7 +72,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 Select an `.html` or `.htm` file using the same file picker. HTML starts at a 640 × 480 viewport with the aspect ratio unlocked. Width and height change the actual viewport, so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup, and drag an outer edge or the toolbar background to move the overlay. The toolbar background remains draggable when collapsed. Hiding the layer keeps its document mounted.
 
-SnapLayer reads the file locally. The mockup can execute inline scripts and load HTTPS styles, scripts, images and fonts; those requests go to the referenced servers. Relative companion files are not imported. External frames, authentication and persistent storage are outside the supported preview use case. Clipboard paste continues to support images and SVG text.
+SnapLayer reads the file locally. The mockup can execute inline scripts and load HTTPS styles, scripts, images and fonts; those requests go to the referenced servers. Scripts can read and transmit the mockup's content and information entered inside it. Relative companion files are not imported. External frames, authentication and persistent storage are outside the supported preview use case. Clipboard paste continues to support images and SVG text.
 
 Uploaded HTML runs inside a manifest sandbox with an opaque origin, without extension APIs or direct access to the comparison page. The extension uses only `activeTab` and `scripting`; HTML previews do not require tab capture or additional host permissions. Resource loading still follows the remote server's browser access restrictions.
 
@@ -89,6 +88,10 @@ Click an edge, the toolbar background or a resize handle to focus the layer. Sho
 | Shift + Arrow keys | Move overlay 10 px |
 | Backspace / Delete | Remove overlay |
 | Cmd/Ctrl + V | Paste image from clipboard |
+
+## Privacy
+
+SnapLayer processes imported content locally for overlay comparison and does not upload files to a developer-operated server. HTML mockups can make their own external connections. Image overlays are inserted into the comparison page, whose scripts can inspect their data. See the [privacy policy](https://github.com/muleyuck/SnapLayer/blob/main/PRIVACY.md) for data handling, permissions and third-party resource requests.
 
 ## License
 
