@@ -2,6 +2,7 @@ import { createElement } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { ImageOverlay } from "@/components/ImageOverlay"
 import contentCss from "@/index.css?inline"
+import type { LayerSource } from "@/layer"
 import type { SnapLayerMessage } from "@/types/messages"
 
 let root: Root | null = null
@@ -29,8 +30,9 @@ const addLayer = (message: SnapLayerMessage) => {
 
     root = createRoot(snapLayerRoot)
   }
-  const source = message.type === "ADD_IMAGE" ? { imageData: message.imageData } : { html: message.html }
-  root.render(createElement(ImageOverlay, { ...source, key: message.type, onDelete: handleDeleteImage }))
+  const source: LayerSource =
+    message.type === "ADD_IMAGE" ? { kind: "image", dataUrl: message.imageData } : { kind: "html", html: message.html }
+  root.render(createElement(ImageOverlay, { source, key: source.kind, onDelete: handleDeleteImage }))
 }
 
 chrome.runtime.onMessage.addListener((message) => {

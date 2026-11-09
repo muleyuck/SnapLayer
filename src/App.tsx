@@ -1,9 +1,12 @@
 import ImageUploader from "@/components/ImageUploader"
+import type { LayerSource } from "@/layer"
 import type { SnapLayerMessage } from "@/types/messages"
 
 const CONTENT_SCRIPT_PATH = "content.js"
 
-const sendMessage = async (message: SnapLayerMessage) => {
+const sendMessage = async (source: LayerSource) => {
+  const message: SnapLayerMessage =
+    source.kind === "image" ? { type: "ADD_IMAGE", imageData: source.dataUrl } : { type: "ADD_HTML", html: source.html }
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   if (!tab.id || !tab.url) {
     throw new Error("Not found Active Tab")
@@ -31,10 +34,7 @@ function App() {
       <h2 className="hidden w-48 dark:block">
         <img src="/logo-dark.svg" alt="SnapLayer Logo Dark" />
       </h2>
-      <ImageUploader
-        onImage={(imageData) => sendMessage({ type: "ADD_IMAGE", imageData })}
-        onHtml={(html) => sendMessage({ type: "ADD_HTML", html })}
-      />
+      <ImageUploader onLoad={sendMessage} />
     </div>
   )
 }

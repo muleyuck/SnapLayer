@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-
-const fileToDataUrl = (file: File | Blob): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+import type { LayerSource } from "@/layer"
+import { readImageSource, readLayerSource } from "@/utils/readLayerSource"
 
 interface Props {
-  onImage: (dataUrl: string) => Promise<void>
-  onHtml: (html: string) => Promise<void>
+  onLoad: (source: LayerSource) => Promise<void>
 }
 
-export default function ImageUploader({ onImage, onHtml }: Props) {
+export default function ImageUploader({ onLoad }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -24,11 +16,7 @@ export default function ImageUploader({ onImage, onHtml }: Props) {
       if (!file) {
         throw new Error("Can't get selected file")
       }
-      if (file.type === "text/html" || /\.html?$/i.test(file.name)) {
-        await onHtml(await file.text())
-      } else {
-        await onImage(await fileToDataUrl(file))
-      }
+      await onLoad(await readLayerSource(file))
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
@@ -79,15 +67,14 @@ export default function ImageUploader({ onImage, onHtml }: Props) {
         if (!pastedFile) {
           throw new Error("Can't get pasted item, Only support (jpeg, png and svg)")
         }
-        const dataUrl = await fileToDataUrl(pastedFile)
-        await onImage(dataUrl)
+        await onLoad(await readImageSource(pastedFile))
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unexpected Error Occurred!")
         console.error(err)
       }
     },
-    [onImage],
+    [onLoad],
   )
 
   useEffect(() => {
@@ -113,7 +100,6 @@ export default function ImageUploader({ onImage, onHtml }: Props) {
           className="hidden"
         />
       </label>
-      <p className="text-gray-500 text-xs dark:text-gray-300">HTML can load external images, styles and scripts.</p>
       {error && <p className="text-red-500 text-xs">{error}</p>}
     </div>
   )
