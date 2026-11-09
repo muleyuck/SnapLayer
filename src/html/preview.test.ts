@@ -87,7 +87,7 @@ describe("HTML preview isolation boundary", () => {
     const post = vi.spyOn(frame.contentWindow, "postMessage").mockImplementation(() => {})
     expect(post).not.toHaveBeenCalled()
     frame.dispatchEvent(new Event("load"))
-    expect(post).toHaveBeenCalledWith({ type: "RENDER_HTML", html }, "*")
+    expect(post).toHaveBeenCalledWith({ type: "RENDER_HTML", html, readyType: HTML_PREVIEW_READY }, "*")
     expect(document.body.innerHTML).not.toContain("日本語の mock")
 
     const sandbox = new JSDOM(sandboxHtml, {
@@ -152,7 +152,10 @@ describe("HTML preview isolation boundary", () => {
     frame.dispatchEvent(new Event("load"))
     expect(document.querySelectorAll("iframe")).toHaveLength(1)
     expect(post).toHaveBeenCalledTimes(1)
-    expect(post).toHaveBeenCalledWith({ type: "RENDER_HTML", html: "<h1>Allowed mock</h1>" }, "*")
+    expect(post).toHaveBeenCalledWith(
+      { type: "RENDER_HTML", html: "<h1>Allowed mock</h1>", readyType: HTML_PREVIEW_READY },
+      "*",
+    )
   })
 
   it("preserves the uploaded HTML and its own Delete shortcut", () => {
@@ -170,7 +173,7 @@ describe("HTML preview isolation boundary", () => {
         new sandbox.window.MessageEvent("message", {
           source: sandbox.window,
           origin: "chrome-extension://snaplayer-test",
-          data: { type: "RENDER_HTML", html },
+          data: { type: "RENDER_HTML", html, readyType: HTML_PREVIEW_READY },
         }),
       )
       const frame = sandbox.window.document.querySelector("iframe")
@@ -192,28 +195,62 @@ describe("HTML preview isolation boundary", () => {
     }
   })
 
-  it.each(["parent", "origin", "payload"])("sandbox rejects a message with an invalid %s", (invalid) => {
+  it("uses the acknowledgement type supplied by its trusted parent", () => {
     const sandbox = new JSDOM(sandboxHtml, {
       url: "chrome-extension://snaplayer-test/html-sandbox.html",
       runScripts: "outside-only",
     })
     try {
+      const reply = vi.spyOn(sandbox.window.parent, "postMessage").mockImplementation(() => {})
       const script = sandbox.window.document.querySelector("script")?.textContent
       assert(script)
       sandbox.window.eval(script)
       sandbox.window.dispatchEvent(
         new sandbox.window.MessageEvent("message", {
-          source: invalid === "parent" ? null : sandbox.window,
-          origin: invalid === "origin" ? "https://example.com" : "chrome-extension://snaplayer-test",
-          data: {
-            type: "RENDER_HTML",
-            html: invalid === "payload" ? 42 : "<h1>Mock</h1>",
-          },
+          source: sandbox.window,
+          origin: "chrome-extension://snaplayer-test",
+          data: { type: "RENDER_HTML", html: "<h1>Mock</h1>", readyType: "RENAMED_READY" },
         }),
       )
-      expect(sandbox.window.document.querySelector("iframe")).toBeNull()
+      expect(reply).toHaveBeenCalledWith({ type: "RENAMED_READY" }, "chrome-extension://snaplayer-test")
     } finally {
       sandbox.window.close()
     }
   })
+
+  it.each(["parent", "origin", "payload", "missing ready type", "invalid ready type", "empty ready type"])(
+    "sandbox rejects a message with an invalid %s",
+    (invalid) => {
+      const sandbox = new JSDOM(sandboxHtml, {
+        url: "chrome-extension://snaplayer-test/html-sandbox.html",
+        runScripts: "outside-only",
+      })
+      try {
+        const script = sandbox.window.document.querySelector("script")?.textContent
+        assert(script)
+        sandbox.window.eval(script)
+        sandbox.window.dispatchEvent(
+          new sandbox.window.MessageEvent("message", {
+            source: invalid === "parent" ? null : sandbox.window,
+            origin: invalid === "origin" ? "https://example.com" : "chrome-extension://snaplayer-test",
+            data: {
+              type: "RENDER_HTML",
+              html: invalid === "payload" ? 42 : "<h1>Mock</h1>",
+              readyType:
+                invalid === "missing ready type"
+                  ? undefined
+                  : invalid === "invalid ready type"
+                    ? 42
+                    : invalid === "empty ready type"
+                      ? ""
+                      : HTML_PREVIEW_READY,
+            },
+          }),
+        )
+        expect(sandbox.window.document.querySelectorAll("iframe")).toHaveLength(0)
+      } finally {
+        sandbox.window.close()
+      }
+    },
+  )
 })

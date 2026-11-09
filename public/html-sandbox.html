@@ -13,14 +13,15 @@
       let initialized = false
       addEventListener("message", (event) => {
         if (initialized || event.source !== parent || event.origin !== `chrome-extension://${location.host}` ||
-            event.data?.type !== "RENDER_HTML" || typeof event.data.html !== "string") return
+            event.data?.type !== "RENDER_HTML" || typeof event.data.html !== "string" ||
+            typeof event.data.readyType !== "string" || event.data.readyType.length === 0) return
         initialized = true
         const frame = document.createElement("iframe")
         frame.title = "HTML document"
         frame.setAttribute("sandbox", "allow-scripts")
         frame.srcdoc = event.data.html
         document.body.appendChild(frame)
-        parent.postMessage({ type: "SNAPLAYER_HTML_READY" }, event.origin)
+        parent.postMessage({ type: event.data.readyType }, event.origin)
       })
     </script>
   </body>

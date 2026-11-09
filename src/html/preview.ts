@@ -3,6 +3,7 @@ import {
   HTML_PREVIEW_REQUEST_PARAM,
   HTML_SANDBOX_PAGE,
   type HtmlPreviewRequest,
+  type HtmlSandboxRequest,
 } from "../htmlPreview"
 
 const requestId = new URLSearchParams(location.search).get(HTML_PREVIEW_REQUEST_PARAM)
@@ -27,7 +28,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   sandbox.addEventListener(
     "load",
     () => {
-      sandbox.contentWindow?.postMessage({ type: "RENDER_HTML", html: request.html }, "*")
+      const sandboxRequest: HtmlSandboxRequest = {
+        type: request.type,
+        html: request.html,
+        readyType: HTML_PREVIEW_READY,
+      }
+      sandbox.contentWindow?.postMessage(sandboxRequest, "*")
     },
     { once: true },
   )

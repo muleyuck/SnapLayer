@@ -4,3 +4,7 @@ export const HTML_PREVIEW_READY = "SNAPLAYER_HTML_READY"
 export const HTML_PREVIEW_REQUEST_PARAM = "request"
 
 export type HtmlPreviewRequest = { type: "RENDER_HTML"; html: string; requestId: string }
+
+export type HtmlSandboxRequest = Pick<HtmlPreviewRequest, "type" | "html"> & {
+  readyType: typeof HTML_PREVIEW_READY
+}
