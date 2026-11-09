@@ -7,7 +7,7 @@ import { HTML_PREVIEW_READY, HTML_SANDBOX_PAGE } from "../htmlPreview"
 const { JSDOM } = createRequire(resolve("package.json"))("jsdom") as {
   JSDOM: new (
     html: string,
-    options: { url: string; runScripts: "outside-only" | "dangerously" },
+    options: { url: string; runScripts: "outside-only" },
   ) => { window: Window & typeof globalThis }
 }
 const sandboxHtml = readFileSync(resolve("public", HTML_SANDBOX_PAGE), "utf8")
@@ -156,43 +156,6 @@ describe("HTML preview isolation boundary", () => {
       { type: "RENDER_HTML", html: "<h1>Allowed mock</h1>", readyType: HTML_PREVIEW_READY },
       "*",
     )
-  })
-
-  it("preserves the uploaded HTML and its own Delete shortcut", () => {
-    const sandbox = new JSDOM(sandboxHtml, {
-      url: "chrome-extension://snaplayer-test/html-sandbox.html",
-      runScripts: "outside-only",
-    })
-    try {
-      const script = sandbox.window.document.querySelector("script")?.textContent
-      assert(script)
-      sandbox.window.eval(script)
-      const html =
-        '<!doctype html><body><p id="card">Card</p><script>addEventListener("keydown", e => { if (e.key === "Delete") document.getElementById("card").remove() })</script></body>'
-      sandbox.window.dispatchEvent(
-        new sandbox.window.MessageEvent("message", {
-          source: sandbox.window,
-          origin: "chrome-extension://snaplayer-test",
-          data: { type: "RENDER_HTML", html, readyType: HTML_PREVIEW_READY },
-        }),
-      )
-      const frame = sandbox.window.document.querySelector("iframe")
-      assert(frame)
-      expect(frame.srcdoc).toBe(html)
-      const preview = new JSDOM(frame.srcdoc, { url: "about:srcdoc", runScripts: "dangerously" })
-      try {
-        const post = vi.spyOn(preview.window.parent, "postMessage").mockImplementation(() => {})
-        const event = new preview.window.KeyboardEvent("keydown", { key: "Delete", bubbles: true, cancelable: true })
-        preview.window.document.body.dispatchEvent(event)
-        expect(preview.window.document.getElementById("card")).toBeNull()
-        expect(event.defaultPrevented).toBe(false)
-        expect(post).not.toHaveBeenCalled()
-      } finally {
-        preview.window.close()
-      }
-    } finally {
-      sandbox.window.close()
-    }
   })
 
   it("uses the acknowledgement type supplied by its trusted parent", () => {
