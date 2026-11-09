@@ -1,14 +1,16 @@
 import { cva } from "class-variance-authority"
-import { useEffect, useMemo, useReducer, useRef, useState } from "react"
+import { useCallback, useReducer, useRef, useState } from "react"
 import { ImageToolbar } from "@/components/ImageToolbar"
-import { IMAGE_OVELAY_INITIAL_STATE, imageOverlayReducer } from "@/hooks/imageOverlayReducer"
+import { LayerContent } from "@/components/LayerContent"
+import { type ImageOverlayState, imageOverlayReducer } from "@/hooks/imageOverlayReducer"
 import { RESIZE_DIRECTIONS, useDragAndResize } from "@/hooks/useDragAndResize"
-import { processSvgImage } from "@/utils/processSvgImage"
+import { LAYER_OPTIONS, type LayerSource } from "@/layer"
 
 const MAX_Z_INDEX = 2147483647
 
 const ARROW_MOVE_STEP = 1
 const ARROW_MOVE_STEP_LARGE = 10
+const MOVE_EDGES = ["top", "right", "bottom", "left"] as const
 
 const ARROW_KEY_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
   ArrowUp: { dx: 0, dy: -1 },
@@ -18,7 +20,7 @@ const ARROW_KEY_DIRECTIONS: Record<string, { dx: number; dy: number }> = {
 }
 
 interface ImageOverlayProps {
-  imageData: string | undefined
+  source: LayerSource
   onDelete: () => void
 }
 
@@ -30,6 +32,27 @@ const fieldsetCva = cva("fixed m-0 box-border select-none border-none p-0 focus:
     },
   },
 })
+const moveEdgeCva = cva(
+  "absolute cursor-grab border-blue-500 p-0 transition-opacity duration-200 active:cursor-grabbing",
+  {
+    variants: {
+      edge: {
+        top: "inset-x-0 -top-2 h-2 border-b",
+        right: "inset-y-0 -right-2 w-2 border-l",
+        bottom: "inset-x-0 -bottom-2 h-2 border-t",
+        left: "inset-y-0 -left-2 w-2 border-r",
+      },
+      visible: {
+        true: "opacity-100",
+        false: "opacity-0",
+      },
+      // Hidden edges sit outside the layer, so they let page clicks through while hover can reveal them.
+      passThrough: {
+        true: "pointer-events-none",
+      },
+    },
+  },
+)
 const resizeHandleCva = cva(
   "absolute h-2.5 w-2.5 rounded-sm border border-white bg-blue-500 transition-opacity duration-200",
   {
@@ -52,11 +75,10 @@ const resizeHandleCva = cva(
   },
 )
 
-export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
-  const [state, dispatch] = useReducer(imageOverlayReducer, IMAGE_OVELAY_INITIAL_STATE)
+export function ImageOverlay({ source, onDelete }: ImageOverlayProps) {
+  const options = LAYER_OPTIONS[source.kind]
+  const [state, dispatch] = useReducer(imageOverlayReducer, options.initialState)
   const [isHovered, setIsHovered] = useState(false)
-
-  const processedImageData = useMemo(() => processSvgImage(imageData), [imageData])
 
   const { isDragging, isResizing, snapGuides, handleDragStart, handleResizeStart } = useDragAndResize({
     state,
@@ -65,8 +87,14 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
 
   const fieldsetRef = useRef<HTMLFieldSetElement>(null)
 
+  const handleMoveStart: React.PointerEventHandler<HTMLElement> = (event) => {
+    event.stopPropagation()
+    handleDragStart(event, true)
+    fieldsetRef.current?.focus()
+  }
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLFieldSetElement>) => {
-    if (event.key === "Backspace" && (event.target as HTMLElement).tagName !== "INPUT") {
+    if ((event.key === "Backspace" || event.key === "Delete") && (event.target as HTMLElement).tagName !== "INPUT") {
       event.preventDefault()
       event.stopPropagation()
       onDelete()
@@ -80,25 +108,20 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
     }
   }
 
-  // Set initial size based on image dimensions
-  useEffect(() => {
-    const img = new Image()
-    img.onload = () => {
-      dispatch({
-        type: "SET_SIZE",
-        payload: { width: Math.round(img.naturalWidth), height: Math.round(img.naturalHeight) },
-      })
-      dispatch({ type: "SET_ASPECT_RATIO", payload: img.naturalWidth / img.naturalHeight })
-    }
-    img.src = imageData ?? ""
-  }, [imageData])
+  const handleNaturalSize = useCallback((size: ImageOverlayState["size"]) => {
+    dispatch({
+      type: "SET_SIZE",
+      payload: { width: Math.round(size.width), height: Math.round(size.height) },
+    })
+    dispatch({ type: "SET_ASPECT_RATIO", payload: size.width / size.height })
+  }, [])
 
   const showHandles = isHovered || isDragging || !!isResizing
 
   return (
     <fieldset
       ref={fieldsetRef}
-      aria-label="Draggable image overlay"
+      aria-label="Draggable layer overlay"
       className={fieldsetCva({ dragging: isDragging })}
       style={{
         left: state.position.x,
@@ -117,24 +140,34 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
     >
-      {/* Image */}
-      {state.isVisibleImage && (
-        <img
-          src={processedImageData}
-          alt="overlay"
-          className="pointer-events-none block"
-          style={{
-            opacity: state.opacity / 100,
-            width: state.size.width,
-            height: state.size.height,
-            objectFit: "fill",
-          }}
-          draggable={false}
-        />
-      )}
+      <LayerContent
+        source={source}
+        size={state.size}
+        opacity={state.opacity}
+        visible={state.isVisibleImage}
+        interactive={!isDragging && !isResizing}
+        onNaturalSize={handleNaturalSize}
+      />
+      {state.isVisibleImage &&
+        MOVE_EDGES.map((edge) => (
+          <button
+            key={edge}
+            type="button"
+            aria-label={`Move from ${edge} edge`}
+            title="Drag edge to move"
+            // Pointer-only control; the fieldset already moves the layer with the arrow keys.
+            tabIndex={-1}
+            className={moveEdgeCva({
+              edge,
+              visible: showHandles,
+              passThrough: !showHandles && options.passThroughInactiveEdges,
+            })}
+            onPointerDown={handleMoveStart}
+          />
+        ))}
       {/* Toolbar */}
-      <ImageToolbar state={state} dispatch={dispatch} onDelete={onDelete} />
-      {/* Resize handles */}
+      <ImageToolbar state={state} dispatch={dispatch} onDelete={onDelete} onMoveStart={handleMoveStart} />
+      {/* Later siblings keep resize handles above overlapping move edges. */}
       {state.isVisibleImage &&
         RESIZE_DIRECTIONS.map((direction) => (
           <button
@@ -142,7 +175,10 @@ export function ImageOverlay({ imageData, onDelete }: ImageOverlayProps) {
             type="button"
             aria-label={`Resize from ${direction}`}
             className={resizeHandleCva({ direction, visible: showHandles })}
-            onPointerDown={handleResizeStart(direction)}
+            onPointerDown={(event) => {
+              handleResizeStart(direction)(event)
+              fieldsetRef.current?.focus()
+            }}
           />
         ))}
       {/* Snap guides */}

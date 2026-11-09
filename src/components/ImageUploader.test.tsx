@@ -3,25 +3,40 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import ImageUploader from "@/components/ImageUploader"
 
 describe("ImageUploader", () => {
-  const onImage = vi.fn()
+  const onLoad = vi.fn()
 
   beforeEach(() => {
-    onImage.mockReset()
+    onLoad.mockReset()
   })
 
   it("should render file input and label", () => {
-    render(<ImageUploader onImage={onImage} />)
+    render(<ImageUploader onLoad={onLoad} />)
 
-    expect(screen.getByText("Paste or Select image")).toBeInTheDocument()
-    expect(screen.getByText("(jpeg, png and svg.)")).toBeInTheDocument()
+    expect(screen.getByText("Select image or HTML")).toBeInTheDocument()
+    expect(screen.getByText("JPEG, PNG, SVG, HTML")).toBeInTheDocument()
     const fileInput = document.querySelector('input[type="file"]')
     expect(fileInput).toBeInTheDocument()
   })
 
   describe("file selection", () => {
-    it("should call onImage with data URL for selected file", async () => {
-      onImage.mockResolvedValue(undefined)
-      render(<ImageUploader onImage={onImage} />)
+    it.each([
+      { name: "mock.html", type: "text/html" },
+      { name: "mock.HTM", type: "" },
+      { name: "mock", type: "text/html" },
+    ])("reads $name as HTML text without converting it to an image", async ({ name, type }) => {
+      const onLoad = vi.fn().mockResolvedValue(undefined)
+      render(<ImageUploader onLoad={onLoad} />)
+      const html = "<!doctype html><h1>デザイン</h1><script>window.mock = true</script>"
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement
+      Object.defineProperty(input, "files", { value: [new File([html], name, { type })] })
+      fireEvent.change(input)
+      await waitFor(() => expect(onLoad).toHaveBeenCalledWith({ kind: "html", html }))
+      expect(onLoad).toHaveBeenCalledTimes(1)
+    })
+
+    it("should call onLoad with data URL for selected file", async () => {
+      onLoad.mockResolvedValue(undefined)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       const file = new File(["test"], "test.png", { type: "image/png" })
@@ -30,12 +45,12 @@ describe("ImageUploader", () => {
       fireEvent.change(input)
 
       await waitFor(() => {
-        expect(onImage).toHaveBeenCalledWith(expect.stringContaining("data:"))
+        expect(onLoad).toHaveBeenCalledWith({ kind: "image", dataUrl: expect.stringContaining("data:") })
       })
     })
 
     it("should display error when no file is selected", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       Object.defineProperty(input, "files", { value: [] })
@@ -43,13 +58,13 @@ describe("ImageUploader", () => {
       fireEvent.change(input)
 
       await waitFor(() => {
-        expect(screen.getByText("Cant't get selected image")).toBeInTheDocument()
+        expect(screen.getByText("Can't get selected file")).toBeInTheDocument()
       })
     })
 
-    it("should display error when onImage throws", async () => {
-      onImage.mockRejectedValue(new Error("upload failed"))
-      render(<ImageUploader onImage={onImage} />)
+    it("should display error when onLoad throws", async () => {
+      onLoad.mockRejectedValue(new Error("upload failed"))
+      render(<ImageUploader onLoad={onLoad} />)
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement
       const file = new File(["test"], "test.png", { type: "image/png" })
@@ -65,7 +80,7 @@ describe("ImageUploader", () => {
 
   describe("clipboard paste", () => {
     it("should display error when clipboard is empty", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       fireEvent.paste(document, { clipboardData: { items: [] } })
 
@@ -75,7 +90,7 @@ describe("ImageUploader", () => {
     })
 
     it("should display error when getAsFile returns null for image", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const clipboardData = {
         items: [{ type: "image/png", getAsFile: () => null }],
@@ -89,7 +104,7 @@ describe("ImageUploader", () => {
     })
 
     it("should display error for unsupported clipboard item type", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const clipboardData = {
         items: [{ type: "application/pdf", getAsFile: () => null }],
@@ -103,7 +118,7 @@ describe("ImageUploader", () => {
     })
 
     it("should display error when pasted text is empty", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const clipboardData = {
         items: [
@@ -122,11 +137,11 @@ describe("ImageUploader", () => {
       })
     })
 
-    it("should call onImage for pasted image", async () => {
-      onImage.mockResolvedValue(undefined)
-      render(<ImageUploader onImage={onImage} />)
+    it.each(["test.png", "mock.html"])("loads a pasted image named %s as an image", async (name) => {
+      onLoad.mockResolvedValue(undefined)
+      render(<ImageUploader onLoad={onLoad} />)
 
-      const file = new File(["test"], "test.png", { type: "image/png" })
+      const file = new File(["test"], name, { type: "image/png" })
       const clipboardData = {
         items: [{ type: "image/png", getAsFile: () => file }],
       }
@@ -134,13 +149,13 @@ describe("ImageUploader", () => {
       fireEvent.paste(document, { clipboardData })
 
       await waitFor(() => {
-        expect(onImage).toHaveBeenCalledWith(expect.stringContaining("data:"))
+        expect(onLoad).toHaveBeenCalledWith({ kind: "image", dataUrl: expect.stringContaining("data:") })
       })
     })
 
-    it("should call onImage for pasted SVG text", async () => {
-      onImage.mockResolvedValue(undefined)
-      render(<ImageUploader onImage={onImage} />)
+    it("should call onLoad for pasted SVG text", async () => {
+      onLoad.mockResolvedValue(undefined)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'
       const clipboardData = {
@@ -156,12 +171,12 @@ describe("ImageUploader", () => {
       fireEvent.paste(document, { clipboardData })
 
       await waitFor(() => {
-        expect(onImage).toHaveBeenCalledWith(expect.stringContaining("data:image/svg+xml"))
+        expect(onLoad).toHaveBeenCalledWith({ kind: "image", dataUrl: expect.stringContaining("data:image/svg+xml") })
       })
     })
 
     it("should reject non-SVG text", async () => {
-      render(<ImageUploader onImage={onImage} />)
+      render(<ImageUploader onLoad={onLoad} />)
 
       const clipboardData = {
         items: [
@@ -186,7 +201,7 @@ describe("ImageUploader", () => {
       const addEventListenerSpy = vi.spyOn(document, "addEventListener")
       const removeEventListenerSpy = vi.spyOn(document, "removeEventListener")
 
-      const { unmount } = render(<ImageUploader onImage={onImage} />)
+      const { unmount } = render(<ImageUploader onLoad={onLoad} />)
 
       expect(addEventListenerSpy).toHaveBeenCalledWith("paste", expect.any(Function))
 

@@ -2,6 +2,7 @@ import { createElement } from "react"
 import { createRoot, type Root } from "react-dom/client"
 import { ImageOverlay } from "@/components/ImageOverlay"
 import contentCss from "@/index.css?inline"
+import type { LayerSource } from "@/layer"
 import type { SnapLayerMessage } from "@/types/messages"
 
 let root: Root | null = null
@@ -11,7 +12,7 @@ const handleDeleteImage = () => {
   root = null
 }
 
-const addImage = (imageData: string) => {
+const addLayer = (message: SnapLayerMessage) => {
   if (!root) {
     const snapLayerHost = document.createElement("div")
     snapLayerHost.id = "snapLayer-host"
@@ -29,11 +30,15 @@ const addImage = (imageData: string) => {
 
     root = createRoot(snapLayerRoot)
   }
-  root.render(createElement(ImageOverlay, { imageData, onDelete: handleDeleteImage }))
+  const source: LayerSource =
+    message.type === "ADD_IMAGE" ? { kind: "image", dataUrl: message.imageData } : { kind: "html", html: message.html }
+  root.render(createElement(ImageOverlay, { source, key: source.kind, onDelete: handleDeleteImage }))
 }
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === "ADD_IMAGE") {
-    addImage((message as SnapLayerMessage).imageData)
+    addLayer(message as SnapLayerMessage)
+  } else if (message?.type === "ADD_HTML" && typeof message.html === "string") {
+    addLayer(message as SnapLayerMessage)
   }
 })

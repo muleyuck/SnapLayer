@@ -8,7 +8,7 @@
 ![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)
 [![Release](https://img.shields.io/github/release/muleyuck/SnapLayer.svg)](https://github.com/muleyuck/SnapLayer/releases/latest)
 
-🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images on any webpage.  
+🎞️ A Chrome extension that lets you overlay JPEG/PNG/SVG images and HTML mockups on any webpage.
 Perfect for designers comparing mockups, developers checking pixel-perfect implementations, or anyone who needs to visually compare images against web content. No more switching tabs — compare side by side in real time.
 
 ## Screenshots
@@ -23,8 +23,9 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 - **Opacity Control** - Adjust transparency for easy comparison
 - **Visibility Toggle** - Quickly show/hide the overlay
 - **JPEG/PNG & SVG Support** - Works with common image formats
+- **HTML Mockups** - Load a single HTML file with CSS, images and rendering scripts; change its viewport dimensions and scroll within the overlay
 - **Style Isolation** - Shadow DOM ensures no conflicts with host page styles
-- **Keyboard Shortcuts** - Move with arrow keys; Shift+arrow for 10 px jumps; Backspace to delete
+- **Keyboard Shortcuts** - Move with arrow keys; Shift+arrow for 10 px jumps; Backspace or Delete to delete
 - **Clipboard Paste** - Paste images with Cmd/Ctrl+V, including SVG as plain text
 - **Fit to Viewport** - Expand image to fill the viewport width and toggle back to original size
 - **Manual Size Input** - Type exact pixel dimensions directly in the toolbar
@@ -50,11 +51,15 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 ## Usage
 
 1. Click the SnapLayer extension icon in Chrome toolbar
-2. Select a JPEG, PNG or SVG image file from your computer
-3. The image appears as an overlay on the current page
-4. **Move**: Drag the image to reposition
+2. Select a JPEG, PNG, SVG or HTML file from your computer
+3. The file appears as an overlay on the current page
+4. **Move**: Drag any outer edge or the toolbar background to reposition any layer; images can also be dragged directly
 5. **Resize**: Drag the corner or edge handles
 6. **Adjust**: Use the toolbar to change opacity, toggle visibility, or delete
+
+Select an `.html` or `.htm` file to preview HTML. Relative companion files are not imported; clipboard paste supports images and SVG only.
+
+Resizing HTML changes its viewport dimensions so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup.
 
 ### Toolbar Controls
 
@@ -69,12 +74,20 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 
 ## Keyboard Shortcuts
 
+Drag any of the four outer edges to move an image, SVG or HTML layer. The square handles resize it. The toolbar stays within the viewport and its background remains draggable when the edges are offscreen. Buttons and inputs keep their normal actions.
+
+Click an edge, the toolbar background or a resize handle to focus the layer. Shortcuts apply while the layer or its controls are focused; editing a toolbar input keeps its native key behavior. Keys pressed inside an HTML mockup are handled by that HTML.
+
 | Key | Action |
 |-----|--------|
 | Arrow keys | Move overlay 1 px |
 | Shift + Arrow keys | Move overlay 10 px |
 | Backspace / Delete | Remove overlay |
 | Cmd/Ctrl + V | Paste image from clipboard |
+
+## Privacy
+
+See the [Privacy Policy](PRIVACY.md).
 
 ## License
 

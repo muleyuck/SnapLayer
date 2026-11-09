@@ -12,6 +12,8 @@ const chromeMock = {
     executeScript: vi.fn(),
   },
   runtime: {
+    getURL: vi.fn((path: string) => `chrome-extension://snaplayer-test/${path}`),
+    sendMessage: vi.fn(() => new Promise(() => {})),
     onMessage: {
       addListener: vi.fn(),
       removeListener: vi.fn(),
@@ -38,6 +40,15 @@ class MockImage {
 }
 
 vi.stubGlobal("Image", MockImage)
+
+// jsdom does not implement element layout observation.
+vi.stubGlobal(
+  "ResizeObserver",
+  class {
+    observe() {}
+    disconnect() {}
+  },
+)
 
 // Reset mocks before each test
 beforeEach(() => {
