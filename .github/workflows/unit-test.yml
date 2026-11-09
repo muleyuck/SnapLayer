@@ -16,3 +16,32 @@ jobs:
     permissions:
       contents: read
     uses: muleyuck/github-actions/.github/workflows/ci-node-pnpm.yml@v1
+  html-security:
+    name: HTML security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: muleyuck/github-actions/actions/node/setup@v1
+      - uses: browser-actions/setup-chrome@48483d551c22a1fe6154c6a195ccc6d5773dc8c4 # v2
+        id: chrome
+      - name: Allow Chrome sandbox user namespaces
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        # Ubuntu restricts user namespaces for downloaded Chrome binaries.
+        run: |
+          sudo tee /etc/apparmor.d/snaplayer-chrome-test > /dev/null <<EOF
+          abi <abi/4.0>,
+          profile snaplayer-chrome-test "$CHROME_PATH" flags=(unconfined) {
+            userns,
+          }
+          EOF
+          sudo apparmor_parser -r /etc/apparmor.d/snaplayer-chrome-test
+      - name: Check HTML security
+        env:
+          CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/check-html-security.mjs

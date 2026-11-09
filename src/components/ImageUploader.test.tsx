@@ -22,6 +22,7 @@ describe("ImageUploader", () => {
     it.each([
       { name: "mock.html", type: "text/html" },
       { name: "mock.HTM", type: "" },
+      { name: "mock", type: "text/html" },
     ])("reads $name as HTML text without converting it to an image", async ({ name, type }) => {
       const onLoad = vi.fn().mockResolvedValue(undefined)
       render(<ImageUploader onLoad={onLoad} />)
