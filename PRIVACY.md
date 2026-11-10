@@ -6,7 +6,7 @@ SnapLayer processes content you choose so you can compare design mockups with a 
 
 ## Content processed on your device
 
-SnapLayer reads selected image and HTML files, and images or SVG source you paste into its popup. It uses that content to display an overlay in the active tab. It also uses the active tab's identifier and URL to place the overlay. SnapLayer does not include an upload server, analytics service, or advertising service, and does not send imported files to a developer-operated server.
+SnapLayer reads selected image and HTML files, and images, SVG source or HTML source you paste into its popup. It uses that content to display an overlay in the active tab. It also uses the active tab's identifier and URL to place the overlay. SnapLayer does not include an upload server, analytics service, or advertising service, and does not send imported files to a developer-operated server.
 
 Images and overlay controls are inserted into the comparison page. That page's scripts can inspect its DOM, including image overlay data. HTML mockup content is rendered in an isolated frame, without direct access to the comparison page's DOM or SnapLayer's extension APIs.
 

@@ -26,7 +26,7 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 - **HTML Mockups** - Load a single HTML file with CSS, images and rendering scripts; change its viewport dimensions and scroll within the overlay
 - **Style Isolation** - Shadow DOM ensures no conflicts with host page styles
 - **Keyboard Shortcuts** - Move with arrow keys; Shift+arrow for 10 px jumps; Backspace or Delete to delete
-- **Clipboard Paste** - Paste images with Cmd/Ctrl+V, including SVG as plain text
+- **Clipboard Paste** - Paste images, SVG source or HTML source with Cmd/Ctrl+V
 - **Fit to Viewport** - Expand image to fill the viewport width and toggle back to original size
 - **Manual Size Input** - Type exact pixel dimensions directly in the toolbar
 
@@ -57,7 +57,9 @@ Perfect for designers comparing mockups, developers checking pixel-perfect imple
 5. **Resize**: Drag the corner or edge handles
 6. **Adjust**: Use the toolbar to change opacity, toggle visibility, or delete
 
-Select an `.html` or `.htm` file to preview HTML. Relative companion files are not imported; clipboard paste supports images and SVG only.
+Select an `.html` or `.htm` file, or paste HTML source to preview it. Relative companion files are not imported.
+
+Pasted HTML source must start with an HTML doctype or a standard HTML opening tag, ignoring surrounding whitespace and tag case. Fragments such as `<div>Mockup</div>` are supported; custom or unknown opening tags and ordinary text are rejected. SVG source starting with an `svg` opening tag stays an image. Images take precedence over accompanying text. Only the clipboard's plain text is used as source; rich HTML from copying a rendered webpage is ignored, even when present alongside plain text.
 
 Resizing HTML changes its viewport dimensions so responsive layouts reflow instead of scaling. Scroll over the HTML to scroll the mockup.
 
@@ -83,7 +85,7 @@ Click an edge, the toolbar background or a resize handle to focus the layer. Sho
 | Arrow keys | Move overlay 1 px |
 | Shift + Arrow keys | Move overlay 10 px |
 | Backspace / Delete | Remove overlay |
-| Cmd/Ctrl + V | Paste image from clipboard |
+| Cmd/Ctrl + V | Paste image, SVG source or HTML source from clipboard |
 
 ## Privacy
 

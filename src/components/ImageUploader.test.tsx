@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import ImageUploader from "@/components/ImageUploader"
 
+const textItem = (text: string, type = "text/plain") => ({
+  type,
+  getAsString: (callback: (text: string) => void) => callback(text),
+})
+
 describe("ImageUploader", () => {
   const onLoad = vi.fn()
 
@@ -113,7 +118,7 @@ describe("ImageUploader", () => {
       fireEvent.paste(document, { clipboardData })
 
       await waitFor(() => {
-        expect(screen.getByText("Can't get pasted item, Only support (jpeg, png and svg)")).toBeInTheDocument()
+        expect(screen.getByText("Paste an image, SVG source, or HTML source")).toBeInTheDocument()
       })
     })
 
@@ -153,19 +158,13 @@ describe("ImageUploader", () => {
       })
     })
 
-    it("should call onLoad for pasted SVG text", async () => {
+    it.each([false, true])("loads SVG source as an image with rich HTML present: %s", async (withRichHtml) => {
       onLoad.mockResolvedValue(undefined)
       render(<ImageUploader onLoad={onLoad} />)
 
       const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>'
       const clipboardData = {
-        items: [
-          {
-            type: "text/plain",
-            getAsFile: () => null,
-            getAsString: (callback: (s: string) => void) => callback(svgText),
-          },
-        ],
+        items: [...(withRichHtml ? [textItem("<div>Rich representation</div>", "text/html")] : []), textItem(svgText)],
       }
 
       fireEvent.paste(document, { clipboardData })
@@ -175,24 +174,89 @@ describe("ImageUploader", () => {
       })
     })
 
-    it("should reject non-SVG text", async () => {
+    it.each(["<svg></svg>", "<svg/>", '<svg\nxmlns="http://www.w3.org/2000/svg"/>'])(
+      "loads SVG source at a tag-name boundary: %s",
+      async (text) => {
+        render(<ImageUploader onLoad={onLoad} />)
+        fireEvent.paste(document, { clipboardData: { items: [textItem(text)] } })
+
+        await waitFor(() =>
+          expect(onLoad).toHaveBeenCalledWith({
+            kind: "image",
+            dataUrl: expect.stringContaining("data:image/svg+xml"),
+          }),
+        )
+      },
+    )
+
+    it.each([
+      "<!doctype html><html><body>Document</body></html>",
+      ' \n<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"><p>Legacy document</p>\n ',
+      "<html><body>No doctype</body></html>",
+      "<head><style>body { color: red }</style></head><body>Mockup</body>",
+      "<body>Body fragment</body>",
+      " \n<SECTION class='mockup'>デザイン</SECTION>\n ",
+      "<img src='https://example.com/mockup.png'>",
+      "<script>throw new Error('must not run in popup')</script><p>Mockup</p>",
+    ])("loads HTML source unchanged: %s", async (html) => {
       render(<ImageUploader onLoad={onLoad} />)
+      fireEvent.paste(document, { clipboardData: { items: [textItem(html)] } })
 
-      const clipboardData = {
-        items: [
-          {
-            type: "text/plain",
-            getAsFile: () => null,
-            getAsString: (callback: (s: string) => void) => callback("Hello World"),
-          },
-        ],
-      }
+      await waitFor(() => expect(onLoad).toHaveBeenCalledWith({ kind: "html", html }))
+      expect(onLoad).toHaveBeenCalledTimes(1)
+    })
 
-      fireEvent.paste(document, { clipboardData })
+    it.each([false, true])("uses plain HTML source with rich HTML first: %s", async (richFirst) => {
+      render(<ImageUploader onLoad={onLoad} />)
+      const html = "<div>Plain source</div>"
+      const items = [textItem(html), textItem("<p>Different rich HTML</p>", "text/html")]
+      fireEvent.paste(document, { clipboardData: { items: richFirst ? items.reverse() : items } })
 
-      await waitFor(() => {
-        expect(screen.getByText("Pasted item as text/plain is only supported SVG")).toBeInTheDocument()
+      await waitFor(() => expect(onLoad).toHaveBeenCalledWith({ kind: "html", html }))
+      expect(onLoad).toHaveBeenCalledTimes(1)
+    })
+
+    it.each([
+      "Hello World",
+      "Use <div> for a container",
+      "<unknown>Placeholder</unknown>",
+      "<mock-card>Custom element</mock-card>",
+      "<svg-card>Mock</svg-card>",
+      "<svgish>text</svgish>",
+      "<svg",
+      "<divergent>Not a div</divergent>",
+      "<div",
+      "<!doctype htmlish><p>Not an HTML doctype</p>",
+      "&lt;div&gt;Escaped source&lt;/div&gt;",
+    ])("rejects unsupported text without loading a layer: %s", async (text) => {
+      render(<ImageUploader onLoad={onLoad} />)
+      fireEvent.paste(document, { clipboardData: { items: [textItem(text)] } })
+
+      await waitFor(() => expect(screen.getByText("Paste an image, SVG source, or HTML source")).toBeInTheDocument())
+      expect(onLoad).not.toHaveBeenCalled()
+    })
+
+    it.each([false, true])("rejects rich HTML with ordinary plain text present: %s", async (withPlainText) => {
+      render(<ImageUploader onLoad={onLoad} />)
+      fireEvent.paste(document, {
+        clipboardData: {
+          items: [textItem("<div>Copied page</div>", "text/html"), ...(withPlainText ? [textItem("Copied page")] : [])],
+        },
       })
+
+      await waitFor(() => expect(screen.getByText("Paste an image, SVG source, or HTML source")).toBeInTheDocument())
+      expect(onLoad).not.toHaveBeenCalled()
+    })
+
+    it("keeps image data ahead of accompanying text representations", async () => {
+      render(<ImageUploader onLoad={onLoad} />)
+      const image = new File(["image bytes"], "mock.png", { type: "image/png" })
+      fireEvent.paste(document, {
+        clipboardData: { items: [textItem("<p>Image caption</p>"), { type: "image/png", getAsFile: () => image }] },
+      })
+      await waitFor(() =>
+        expect(onLoad).toHaveBeenCalledWith({ kind: "image", dataUrl: expect.stringContaining("data:image/png") }),
+      )
     })
   })
 
