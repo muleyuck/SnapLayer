@@ -22,6 +22,25 @@ describe("Popup sendMessage", () => {
     fireEvent.change(input)
   }
 
+  it("sends pasted HTML through the same layer request as uploaded HTML", async () => {
+    vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
+      { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
+    ])
+    vi.mocked(chrome.tabs.sendMessage).mockResolvedValue(undefined)
+    render(<App />)
+    const html = "<div>Pasted mockup</div>"
+    fireEvent.paste(document, {
+      clipboardData: {
+        items: [{ type: "text/plain", getAsString: (callback: (text: string) => void) => callback(html) }],
+      },
+    })
+
+    await waitFor(() => {
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, { type: "ADD_HTML", html })
+      expect(window.close).toHaveBeenCalled()
+    })
+  })
+
   it("sends uploaded HTML as an HTML layer request", async () => {
     vi.mocked(chrome.tabs.query as TabQueryFn).mockResolvedValue([
       { id: 1, url: "https://example.com" } as chrome.tabs.Tab,
