@@ -17,8 +17,9 @@ describe("ImageUploader", () => {
   it("should render file input and label", () => {
     render(<ImageUploader onLoad={onLoad} />)
 
-    expect(screen.getByText("Select image or HTML")).toBeInTheDocument()
-    expect(screen.getByText("JPEG, PNG, SVG, HTML")).toBeInTheDocument()
+    expect(screen.getByText("Select or paste")).toBeInTheDocument()
+    expect(screen.getByText("JPEG · PNG · SVG · HTML")).toBeInTheDocument()
+    expect(screen.getByText("HTML can run scripts and send data.")).toBeVisible()
     const fileInput = document.querySelector('input[type="file"]')
     expect(fileInput).toBeInTheDocument()
   })

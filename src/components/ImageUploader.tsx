@@ -53,9 +53,9 @@ export default function ImageUploader({ onLoad }: Props) {
     <div className="space-y-1">
       <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-gray-400 border-dashed bg-gray-50 p-8 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:bg-gray-700 dark:hover:border-blue-300/60 dark:hover:bg-blue-500/20">
         <h2 className="text-center text-sm">
-          <p className="font-semibold">Select image or HTML</p>
-          <p className="text-gray-500 dark:text-gray-300">JPEG, PNG, SVG, HTML</p>
-          <p className="text-gray-500 dark:text-gray-300">Paste images, SVG or HTML source</p>
+          <p className="font-semibold">Select or paste</p>
+          <p className="text-gray-500 dark:text-gray-300">JPEG · PNG · SVG · HTML</p>
+          <p className="text-gray-500 dark:text-gray-300">HTML can run scripts and send data.</p>
         </h2>
         <input
           ref={fileInputRef}
