@@ -27,7 +27,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: muleyuck/github-actions/actions/node/setup@v1
-      - uses: browser-actions/setup-chrome@48483d551c22a1fe6154c6a195ccc6d5773dc8c4 # v2
+      - uses: browser-actions/setup-chrome@48ad923757ca74d66703209fe939badbdf80f2f4 # v2
         id: chrome
       - name: Allow Chrome sandbox user namespaces
         env:
