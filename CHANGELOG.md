@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/muleyuck/SnapLayer/compare/snap-layer-v0.4.1...snap-layer-v0.5.0) (2026-11-14)
+
+
+### Features
+
+* support HTML mockup overlays ([#134](https://github.com/muleyuck/SnapLayer/issues/134)) ([f85913a](https://github.com/muleyuck/SnapLayer/commit/f85913a5dcc19ca27b72764d274527eb30b8ba76))
+* support pasting HTML source text ([#137](https://github.com/muleyuck/SnapLayer/issues/137)) ([6b1d761](https://github.com/muleyuck/SnapLayer/commit/6b1d761c6b0e9f1b42b391a33fff193afcf15dc8))
+
+
+### Bug Fixes
+
+* disclose HTML script execution and data transmission ([#138](https://github.com/muleyuck/SnapLayer/issues/138)) ([d9ad3c8](https://github.com/muleyuck/SnapLayer/commit/d9ad3c8f934dff8e789e906ac0bfbe4412541192))
+
 ## [0.4.1](https://github.com/muleyuck/SnapLayer/compare/snap-layer-v0.4.0...snap-layer-v0.4.1) (2026-07-08)
 
 
